@@ -207,6 +207,19 @@ body{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/20
 .star-btn svg{width:30px;height:30px}
 .star-btn:hover svg path{stroke:#e0a800}
 .star-row .hint{margin-left:8px;font-size:.85rem;color:var(--muted)}
+
+/* Mehr Platz: Kopf schiebt sich weg, Filter und Video-Link einklappbar */
+header{transition:margin-top .3s ease}
+.wrap.compact header{margin-top:calc(24px - var(--headH, 160px))}
+.filter-btn{margin-left:auto;display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);padding:11px 14px}
+.filter-btn svg{width:16px;height:16px}
+.filter-btn[aria-expanded="true"],.filter-btn.active{background:var(--band);border-color:var(--band);color:var(--on-band)}
+.linkbar{padding-top:6px;gap:8px}
+.linkbar-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:0;padding:6px 0;color:var(--accent)}
+.linkbar-toggle svg{width:20px;height:20px;transition:transform .2s;transform:rotate(0deg)}
+.linkbar-toggle[aria-expanded="true"] svg{transform:rotate(180deg)}
+@media (max-width:480px){.wide{display:none}}
+@media (prefers-reduced-motion:reduce){header{transition:none}}
 </style>
 </head>
 <body>
@@ -221,7 +234,7 @@ body{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/20
   </header>
 
   <section class="panel" id="listView">
-    <div class="row-end" id="newBar" style="justify-content:flex-start"><button class="btn primary" id="newBtn" type="button">+ Rezept hinzufügen</button><button class="btn" id="swipeBtn" type="button">♥ Swipen</button></div>
+    <div class="row-end" id="newBar" style="justify-content:flex-start"><button class="btn primary" id="newBtn" type="button">+ Rezept<span class="wide"> hinzufügen</span></button><button class="btn" id="swipeBtn" type="button">♥ Swipen</button><button class="btn filter-btn" id="filterBtn" type="button" aria-expanded="false" aria-controls="filters"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6 7.5V18l-4 2v-7.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><span id="filterLabel">Filter</span></button></div>
     <form class="newform" id="newForm" hidden autocomplete="off">
       <button class="pick" type="button" id="pickCover"><span id="pickLabel">Titelbild auswählen</span></button>
       <input id="newName" placeholder="Name, z.B. Linsen-Curry mit Kokos" maxlength="120" aria-label="Name des Rezepts">
@@ -240,8 +253,8 @@ body{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/20
       </div>
     </div>
     <form class="linkbar" id="linkForm" autocomplete="off">
-      <span class="linkbar-label">Rezept aus Video</span>
-      <div class="linkbar-row">
+      <button class="linkbar-toggle" id="linkToggle" type="button" aria-expanded="false" aria-controls="linkRow"><span class="linkbar-label">Rezept aus Video</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <div class="linkbar-row" id="linkRow" hidden>
         <input id="linkInput" type="url" inputmode="url" placeholder="TikTok- oder YouTube-Link einfügen" aria-label="Link zum Video">
         <button class="btn primary" type="submit" id="linkBtn">Erstellen</button>
       </div>
@@ -392,6 +405,32 @@ const coverY=r=>Number.isFinite(r.coverY)?Math.max(0,Math.min(100,r.coverY)):50;
   new MutationObserver(edges).observe(el,{childList:true});
 })();
 
+/* ---------- Mehr Platz für die Rezepte ---------- */
+let filtersOpen=false;
+try{ filtersOpen=localStorage.getItem("rezepte.filtersOpen")==="1"; }catch(e){}
+$("#filterBtn").addEventListener("click",()=>{
+  filtersOpen=!filtersOpen;
+  try{ localStorage.setItem("rezepte.filtersOpen",filtersOpen?"1":"0"); }catch(e){}
+  renderList();
+});
+$("#linkToggle").addEventListener("click",()=>{
+  const open=$("#linkRow").hidden;
+  $("#linkRow").hidden=!open; $("#linkToggle").setAttribute("aria-expanded",open);
+  if(open) $("#linkInput").focus();
+});
+// Beim Runterscrollen schiebt sich der helle Bereich über den grünen Kopf
+(()=>{
+  const wrap=document.querySelector(".wrap"), head=$("#head"), sc=$("#listView .scroll");
+  const measure=()=>{ if(!wrap.classList.contains("compact")) wrap.style.setProperty("--headH",head.offsetHeight+"px"); };
+  sc.addEventListener("scroll",()=>{
+    measure();
+    if(sc.scrollTop>24) wrap.classList.add("compact");
+    else if(sc.scrollTop<=2) wrap.classList.remove("compact");
+  },{passive:true});
+  addEventListener("resize",measure);
+  measure();
+})();
+
 /* ---------- Zustand ---------- */
 let swipeOpen=false;
 let recipes=[], view=null, confirmDel=false, newBlob=null, coverFor=null;
@@ -429,7 +468,12 @@ function renderList(){
                 {id:"ohne",label:"Noch ohne Kategorie",items:list.filter(r=>!catOf(r))}];
   if(filter!=="alle" && !groups.some(g=>g.id===filter)) filter="alle";
   const chips=[{id:"alle",label:"Alle",items:list},...groups.filter(g=>g.id!=="ohne"||g.items.length)];
-  $("#filters").hidden=list.length===0;
+  $("#filters").hidden=list.length===0 || !filtersOpen;
+  const active=chips.find(g=>g.id===filter);
+  $("#filterLabel").textContent = filter==="alle" ? "Filter" : active.label;
+  $("#filterBtn").classList.toggle("active", filter!=="alle");
+  $("#filterBtn").setAttribute("aria-expanded", filtersOpen);
+  $("#filterBtn").hidden = list.length===0;
   $("#filters").innerHTML=chips.map(g=>`<button type="button" class="chip" data-filter="${g.id}" aria-pressed="${filter===g.id}">${g.label}<span class="n">${g.items.length}</span></button>`).join("");
   $("#empty").hidden=list.length>0;
   if(filter==="alle"){
