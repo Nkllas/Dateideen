@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Unsere Rezepte</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&family=Figtree:wght@400;500;600&display=swap">
+<style>
+/* Layout: gleiche App-Form wie die Dateideen; Kopf steht, Rezeptkacheln scrollen; Detailansicht ersetzt die Liste */
+:root{
+  --bg:#f6f9f4; --surface:#ffffff; --ink:#24301f; --muted:#6f7f69; --line:#e1eadb;
+  --accent:#5b8a4e; --accent-soft:#e8f1e2; --btn:#dcebd3;
+  --display:"Gloock", Georgia, serif; --body:"Figtree", system-ui, -apple-system, sans-serif;
+}
+:root{color-scheme:light}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%}
+body{margin:0;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+img{max-width:100%}
+button{font:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.wrap{max-width:620px;height:100%;margin:0 auto;padding-block:32px 12px;display:flex;flex-direction:column;gap:24px}
+header,.status,.topbar{flex:none}
+.count{font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-variant-numeric:tabular-nums}
+.switch{display:inline-flex;align-items:center;gap:10px;color:inherit;text-decoration:none;border-radius:8px}
+.switch h1{font-family:var(--display);font-weight:400;font-size:clamp(2.2rem,7vw,3.2rem);line-height:1.05;margin:0}
+.switch svg{width:22px;height:22px;color:var(--muted);flex:none;transition:transform .2s}
+.switch:hover svg{transform:translateX(2px);color:var(--accent)}
+header p{margin:8px 0 0;color:var(--muted)}
+
+.panel{flex:1;min-height:0;display:flex;flex-direction:column;gap:16px}
+.scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 2px 24px;margin:0 -2px}
+.btn{background:var(--btn);color:var(--ink);border:0;border-radius:10px;padding:12px 18px;font-weight:600}
+.btn.primary{background:var(--accent);color:var(--surface)}
+.ghost{background:none;border:0;color:var(--muted);padding:8px 4px}
+
+/* Neues Rezept */
+.newform{flex:none;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.pick{position:relative;aspect-ratio:16/9;max-width:100%;border:1.5px dashed var(--line);border-radius:10px;background:var(--accent-soft);color:var(--muted);overflow:hidden;padding:0;display:grid;place-items:center}
+.pick img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.newform input{font:inherit;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);min-width:0}
+.newform input:focus{outline:none;border-color:var(--accent)}
+.row-end{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+
+/* Kacheln */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.card{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;padding:0;text-align:left;color:inherit}
+.card:hover{border-color:var(--accent)}
+.cover{aspect-ratio:4/3;max-width:100%;width:100%;background:var(--accent-soft);display:grid;place-items:center;color:var(--accent);overflow:hidden}
+.cover img{width:100%;height:100%;object-fit:cover;display:block}
+.cover svg{width:36px;height:36px;opacity:.7}
+.card-body{padding:10px 12px 12px;display:flex;flex-direction:column;gap:2px}
+.card-title{font-weight:600;overflow-wrap:anywhere}
+.card-meta{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.empty{border:1.5px dashed var(--line);border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:8px;color:var(--muted)}
+.empty strong{color:var(--ink);font-family:var(--display);font-weight:400;font-size:1.35rem}
+
+/* Detail */
+.topbar{display:flex;justify-content:space-between;align-items:center}
+.back{display:inline-flex;align-items:center;gap:6px;background:none;border:0;color:var(--accent);font-weight:600;padding:6px 0}
+.back svg{width:18px;height:18px}
+.detail{display:flex;flex-direction:column;gap:22px}
+.hero{position:relative;aspect-ratio:16/10;max-width:100%;border-radius:16px;overflow:hidden;background:var(--accent-soft);display:grid;place-items:center;color:var(--accent)}
+.hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hero svg{width:48px;height:48px;opacity:.7}
+.hero .change{position:absolute;right:10px;bottom:10px;background:var(--surface);color:var(--ink);border:0;border-radius:999px;padding:6px 12px;font-size:.85rem;font-weight:500}
+.rtitle{font-family:var(--display);font-size:clamp(1.8rem,6vw,2.4rem);line-height:1.1;border:0;border-bottom:1.5px solid transparent;background:none;color:var(--ink);padding:2px 0;width:100%}
+.rtitle:focus{outline:none;border-bottom-color:var(--accent)}
+.sec{display:flex;flex-direction:column;gap:10px}
+.sec h2{margin:0;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:600;display:flex;justify-content:space-between}
+.sec h2 span{color:var(--muted);font-weight:500;font-variant-numeric:tabular-nums}
+.items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.items:empty{display:none}
+.items li{display:flex;align-items:flex-start;gap:10px;padding:8px 8px 8px 12px;border-top:1px solid var(--line)}
+.items li:first-child{border-top:0}
+.leaf{flex:none;width:8px;height:8px;border-radius:50%;background:var(--accent);margin-top:12px}
+.num{flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-weight:600;font-size:.85rem;display:grid;place-items:center;margin-top:5px;font-variant-numeric:tabular-nums}
+.items input,.items textarea{flex:1;min-width:0;font:inherit;border:0;background:none;color:var(--ink);padding:6px 0;resize:none;line-height:1.5}
+.items input:focus,.items textarea:focus{outline:none}
+.x{flex:none;width:30px;height:30px;border:0;border-radius:50%;background:none;color:var(--muted);font-size:1.1rem;line-height:1}
+.x:hover{background:var(--accent-soft);color:var(--ink)}
+.adder{display:flex;gap:8px;align-items:flex-end}
+.adder input,.adder textarea{flex:1;min-width:0;font:inherit;padding:10px 12px;border:1.5px dashed var(--line);border-radius:10px;background:transparent;color:var(--ink);resize:vertical}
+.adder input:focus,.adder textarea:focus{outline:none;border-style:solid;border-color:var(--accent)}
+.adder textarea{min-height:46px}
+.del{align-self:flex-start;background:none;border:0;color:var(--muted);font-size:.85rem;padding:4px 0;text-decoration:underline}
+.del.sure{color:#b4442f;font-weight:600}
+.status{font-size:.8rem;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header id="head">
+    <div class="count" id="count">Verbindet …</div>
+    <a class="switch" id="switch" href="index.html" title="Zu den Dateideen">
+      <h1>Unsere Rezepte</h1>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h12l-3-3M17 17H5l3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+    <p>Rezept anlegen, Titelbild dazu, antippen für Zutaten und Schritte.</p>
+  </header>
+
+  <section class="panel" id="listView">
+    <div class="row-end" id="newBar" style="justify-content:flex-start"><button class="btn primary" id="newBtn" type="button">+ Rezept hinzufügen</button></div>
+    <form class="newform" id="newForm" hidden autocomplete="off">
+      <button class="pick" type="button" id="pickCover"><span id="pickLabel">Titelbild auswählen</span></button>
+      <input id="newName" placeholder="Name, z.B. Linsen-Curry mit Kokos" maxlength="120" aria-label="Name des Rezepts">
+      <div class="row-end">
+        <button class="ghost" type="button" id="cancelNew">Abbrechen</button>
+        <button class="btn primary" type="submit" id="saveNew">Anlegen</button>
+      </div>
+    </form>
+    <div class="scroll">
+      <div class="grid" id="grid"></div>
+      <div class="empty" id="empty" hidden>
+        <strong>Noch keine Rezepte</strong>
+        <span>Tipp auf „+ Rezept hinzufügen“, wähl ein Titelbild und gib dem Rezept einen Namen.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="detailView" hidden>
+    <div class="topbar">
+      <button class="back" id="back" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Alle Rezepte</button>
+    </div>
+    <div class="scroll"><div class="detail" id="detail"></div></div>
+  </section>
+
+  <div class="status" id="status"></div>
+  <input type="file" id="coverInput" accept="image/*" hidden>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+const esc=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const LEAF='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19c0-8 6-14 15-14 0 9-6 15-14 15M5 19l7-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+/* ---------- Speicher: Firebase Realtime Database (gleiche Liste wie die Dateideen) ---------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyBKWH41rcugWC5VEXec1AiyOibd2C1znwg",
+  authDomain: "datei-62acf.firebaseapp.com",
+  databaseURL: "https://datei-62acf-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "datei-62acf",
+  storageBucket: "datei-62acf.firebasestorage.app",
+  messagingSenderId: "186810025176",
+  appId: "1:186810025176:web:3addf6d15d97ba454b03ad"
+};
+function listCode(){
+  const fromHash=location.hash.replace(/^#/,"");
+  let code=/^[A-Za-z0-9]{24,64}$/.test(fromHash)?fromHash:null;
+  if(!code){ try{ code=localStorage.getItem("dateideen.code") }catch(e){} }
+  if(!code){
+    const abc="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+    code=[...crypto.getRandomValues(new Uint8Array(28))].map(x=>abc[x%abc.length]).join("");
+  }
+  try{ localStorage.setItem("dateideen.code",code) }catch(e){}
+  history.replaceState(history.state,"","#"+code);
+  return code;
+}
+const CODE=listCode();
+$("#switch").href="index.html#"+CODE;
+let root=null;
+try{ firebase.initializeApp(firebaseConfig); root=firebase.database().ref("lists/"+CODE); }catch(e){}
+function showErr(e){ $("#status").textContent = /permission/i.test(String(e&&(e.code||e.message)))
+  ? "Die Datenbank lässt nicht speichern. Prüf die Regeln in Firebase." : "Speichern hat nicht geklappt. Prüf die Internetverbindung."; }
+const patch=(id,data)=>root.child("recipes/"+id).update(data).catch(showErr);
+
+/* ---------- Fotos (wie bei den Dateideen) ---------- */
+const photoCache=new Map(), photoLoading=new Set();
+const okId=p=>typeof p==="string" && /^[0-9a-f]{32}$/.test(p);
+function photoUrl(p){
+  if(photoCache.has(p)) return photoCache.get(p);
+  if(root && !photoLoading.has(p)){
+    photoLoading.add(p);
+    root.child("photos/"+p).once("value").then(snap=>{
+      const v=snap.val();
+      if(typeof v==="string" && v.startsWith("data:image/")){ photoCache.set(p,v); render(); }
+    }).catch(()=>{});
+  }
+  return null;
+}
+async function uploadPhoto(blob){
+  const bmp=await createImageBitmap(blob);
+  const s=Math.min(1,1400/Math.max(bmp.width,bmp.height));
+  const c=document.createElement("canvas");
+  c.width=Math.round(bmp.width*s); c.height=Math.round(bmp.height*s);
+  c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);
+  const url=c.toDataURL("image/jpeg",.8);
+  const id=[...crypto.getRandomValues(new Uint8Array(16))].map(x=>x.toString(16).padStart(2,"0")).join("");
+  await root.child("photos/"+id).set(url);
+  photoCache.set(id,url);
+  return id;
+}
+const coverHtml=(id,cls)=>{ const u=okId(id)&&photoUrl(id); return u?`<img src="${u}" alt="">`:LEAF; };
+
+/* ---------- Zustand ---------- */
+let recipes=[], view=null, confirmDel=false, newBlob=null, coverFor=null;
+const arr=v=>Array.isArray(v)?v.filter(x=>typeof x==="string"):(v&&typeof v==="object"?Object.values(v).filter(x=>typeof x==="string"):[]);
+const cur=()=>recipes.find(r=>r.id===view);
+
+/* ---------- Rendern ---------- */
+function render(){
+  $("#count").textContent = recipes.length===1?"1 Rezept":`${recipes.length} Rezepte`;
+  const r=cur(); if(view && !r) view=null;
+  $("#head").hidden=!!view; $("#listView").hidden=!!view; $("#detailView").hidden=!view;
+  view?renderDetail(r):renderList();
+}
+function renderList(){
+  const list=[...recipes].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  $("#empty").hidden=list.length>0;
+  $("#grid").innerHTML=list.map(r=>{
+    const n=arr(r.ingredients).length, s=arr(r.steps).length;
+    return `<button class="card" type="button" data-open="${esc(r.id)}">
+      <div class="cover">${coverHtml(r.cover)}</div>
+      <div class="card-body"><span class="card-title">${esc(r.title||"Ohne Namen")}</span>
+      <span class="card-meta">${n} Zutaten · ${s} Schritte</span></div></button>`;
+  }).join("");
+}
+function renderDetail(r){
+  // nicht neu bauen, während jemand gerade in ein Feld tippt
+  const a=document.activeElement;
+  if(a && $("#detail").contains(a) && a.matches("[data-ing],[data-step],#rtitle")) return;
+  const ing=arr(r.ingredients), steps=arr(r.steps);
+  $("#detail").innerHTML=`
+    <div class="hero">${coverHtml(r.cover)}<button class="change" type="button" data-act="cover">${okId(r.cover)?"Bild ändern":"Titelbild hinzufügen"}</button></div>
+    <input class="rtitle" id="rtitle" maxlength="120" aria-label="Name des Rezepts" value="${esc(r.title)}">
+    <div class="sec">
+      <h2>Zutaten <span>${ing.length}</span></h2>
+      <ul class="items">${ing.map((t,k)=>`<li><span class="leaf"></span><input id="ing-${k}" data-ing="${k}" value="${esc(t)}" aria-label="Zutat ${k+1}"><button class="x" type="button" data-act="del-ing" data-k="${k}" aria-label="Zutat löschen">×</button></li>`).join("")}</ul>
+      <form class="adder" id="addIng" autocomplete="off"><input id="newIng" placeholder="z.B. 200 g rote Linsen" aria-label="Neue Zutat"><button class="btn" type="submit">+</button></form>
+    </div>
+    <div class="sec">
+      <h2>Zubereitung <span>${steps.length} Schritte</span></h2>
+      <ol class="items">${steps.map((t,k)=>`<li><span class="num">${k+1}</span><textarea id="step-${k}" data-step="${k}" rows="1" aria-label="Schritt ${k+1}">${esc(t)}</textarea><button class="x" type="button" data-act="del-step" data-k="${k}" aria-label="Schritt löschen">×</button></li>`).join("")}</ol>
+      <form class="adder" id="addStep" autocomplete="off"><textarea id="newStep" rows="2" placeholder="Nächster Schritt, z.B. Zwiebeln glasig anbraten" aria-label="Neuer Schritt"></textarea><button class="btn" type="submit">+</button></form>
+    </div>
+    <button class="del${confirmDel?" sure":""}" type="button" data-act="del-recipe">${confirmDel?"Wirklich löschen?":"Rezept löschen"}</button>`;
+  $("#detail").querySelectorAll("textarea[data-step]").forEach(grow);
+}
+const grow=t=>{ t.style.height="auto"; t.style.height=t.scrollHeight+"px"; };
+
+/* ---------- Navigation (Zurück-Taste des Handys funktioniert) ---------- */
+function openRecipe(id){ view=id; confirmDel=false; history.pushState({r:id},"","#"+CODE); render(); $("#detailView .scroll").scrollTop=0; }
+addEventListener("popstate",e=>{ view=e.state&&e.state.r||null; confirmDel=false; render(); });
+$("#back").addEventListener("click",()=>{ if(history.state&&history.state.r) history.back(); else { view=null; render(); } });
+
+/* ---------- Neues Rezept ---------- */
+$("#newBtn").addEventListener("click",()=>{ $("#newForm").hidden=false; $("#newBar").hidden=true; $("#newName").focus(); });
+function resetNew(){
+  newBlob=null; $("#newForm").reset(); $("#newForm").hidden=true; $("#newBar").hidden=false;
+  $("#pickCover").innerHTML='<span id="pickLabel">Titelbild auswählen</span>';
+}
+$("#cancelNew").addEventListener("click",resetNew);
+$("#pickCover").addEventListener("click",()=>{ coverFor="new"; $("#coverInput").click(); });
+$("#newForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const title=$("#newName").value.trim();
+  if(!title){ $("#status").textContent="Gib dem Rezept einen Namen."; $("#newName").focus(); return; }
+  if(!root) return;
+  $("#saveNew").disabled=true; $("#saveNew").textContent="Speichert …";
+  try{
+    const cover=newBlob?await uploadPhoto(newBlob):null;
+    const id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    await root.child("recipes/"+id).set({title,cover,ingredients:[],steps:[],createdAt:Date.now()});
+    $("#status").textContent=""; resetNew();
+  }catch(err){ showErr(err); }
+  $("#saveNew").disabled=false; $("#saveNew").textContent="Anlegen";
+});
+$("#coverInput").addEventListener("change",async e=>{
+  const f=e.target.files[0]; e.target.value=""; if(!f) return;
+  if(coverFor==="new"){
+    newBlob=f;
+    $("#pickCover").innerHTML=`<img src="${URL.createObjectURL(f)}" alt="Ausgewähltes Titelbild">`;
+    return;
+  }
+  const r=recipes.find(x=>x.id===coverFor); if(!r) return;
+  $("#status").textContent="Bild wird hochgeladen …";
+  try{
+    const old=r.cover, id=await uploadPhoto(f);
+    r.cover=id; await patch(r.id,{cover:id});
+    if(okId(old)) root.child("photos/"+old).remove().catch(()=>{});
+    $("#status").textContent=""; render();
+  }catch(err){ $("#status").textContent="Das Bild konnte nicht hochgeladen werden. Nimm ein JPG oder PNG."; }
+});
+
+/* ---------- Detail bearbeiten ---------- */
+document.addEventListener("click",e=>{
+  const o=e.target.closest("[data-open]"); if(o){ openRecipe(o.dataset.open); return; }
+  const b=e.target.closest("[data-act]"); if(!b) return;
+  const r=cur(); if(!r) return;
+  const act=b.dataset.act, k=+b.dataset.k;
+  if(act==="cover"){ coverFor=r.id; $("#coverInput").click(); }
+  if(act==="del-ing"){ r.ingredients=arr(r.ingredients).filter((_,i)=>i!==k); patch(r.id,{ingredients:r.ingredients}); render(); }
+  if(act==="del-step"){ r.steps=arr(r.steps).filter((_,i)=>i!==k); patch(r.id,{steps:r.steps}); render(); }
+  if(act==="del-recipe"){
+    if(!confirmDel){ confirmDel=true; render(); return; }
+    if(okId(r.cover)) root.child("photos/"+r.cover).remove().catch(()=>{});
+    root.child("recipes/"+r.id).remove().catch(showErr);
+    recipes=recipes.filter(x=>x.id!==r.id); confirmDel=false;
+    if(history.state&&history.state.r) history.back(); else { view=null; render(); }
+  }
+});
+document.addEventListener("submit",e=>{
+  const r=cur(); if(!r) return;
+  if(e.target.id==="addIng"){
+    e.preventDefault(); const v=$("#newIng").value.trim(); if(!v) return;
+    r.ingredients=[...arr(r.ingredients),v]; patch(r.id,{ingredients:r.ingredients});
+    $("#newIng").blur(); render(); $("#newIng").focus();
+  }
+  if(e.target.id==="addStep"){
+    e.preventDefault(); const v=$("#newStep").value.trim(); if(!v) return;
+    r.steps=[...arr(r.steps),v]; patch(r.id,{steps:r.steps});
+    $("#newStep").blur(); render(); $("#newStep").focus();
+  }
+});
+// Enter im Schritt-Feld fügt hinzu, Shift+Enter macht eine neue Zeile
+document.addEventListener("keydown",e=>{
+  if(e.target.id==="newStep" && e.key==="Enter" && !e.shiftKey){ e.preventDefault(); $("#addStep").requestSubmit(); }
+});
+const timers={};
+document.addEventListener("input",e=>{
+  const t=e.target, r=cur(); if(!r) return;
+  if(t.matches("textarea")) grow(t);
+  let field=null;
+  if(t.id==="rtitle"){ r.title=t.value; field="title"; }
+  else if(t.dataset.ing){ const a=arr(r.ingredients); a[+t.dataset.ing]=t.value; r.ingredients=a; field="ingredients"; }
+  else if(t.dataset.step){ const a=arr(r.steps); a[+t.dataset.step]=t.value; r.steps=a; field="steps"; }
+  if(!field) return;
+  clearTimeout(timers[field]);
+  timers[field]=setTimeout(()=>patch(r.id,{[field]:r[field]}),500);
+});
+document.addEventListener("focusout",e=>{ if(e.target.matches("[data-ing],[data-step],#rtitle")) setTimeout(render,600); });
+
+/* ---------- Start ---------- */
+history.replaceState(null,"","#"+CODE);
+render();
+if(!root){
+  $("#count").textContent="Keine Verbindung";
+  $("#status").textContent="Die Datenbank konnte nicht geladen werden. Prüf die Internetverbindung und lade die Seite neu.";
+}else{
+  root.child("recipes").on("value",snap=>{
+    const v=snap.val()||{};
+    recipes=Object.entries(v).map(([id,d])=>({id,...d}));
+    render();
+  },err=>{ $("#count").textContent="Keine Verbindung"; showErr(err); });
+}
+</script>
+</body>
+</html>
