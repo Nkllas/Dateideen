@@ -196,6 +196,17 @@ body{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/20
 @keyframes fade{from{opacity:0}}
 @keyframes pop{from{transform:scale(.9);opacity:0}}
 @media (prefers-reduced-motion:reduce){.scard.fly,.scard.back{transition:none}}
+
+/* Sterne */
+.stars-badge{position:absolute;left:8px;bottom:8px;z-index:1;display:flex;gap:1px;padding:3px 6px;border-radius:999px;background:rgba(20,25,18,.55)}
+.stars-badge svg{width:12px;height:12px}
+.hero .stars-badge{left:12px;bottom:12px;padding:5px 9px;gap:2px}
+.hero .stars-badge svg{width:16px;height:16px}
+.star-row{display:flex;align-items:center;gap:2px}
+.star-btn{background:none;border:0;padding:2px;line-height:0;border-radius:6px}
+.star-btn svg{width:30px;height:30px}
+.star-btn:hover svg path{stroke:#e0a800}
+.star-row .hint{margin-left:8px;font-size:.85rem;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -396,11 +407,19 @@ function render(){
   $("#detailView").hidden = mode!=="detail"; $("#swipeView").hidden = mode!=="swipe";
   if(mode==="detail") renderDetail(r); else if(mode==="swipe") renderSwipe(); else renderList();
 }
+/* ---------- Sterne ---------- */
+const STAR_ON="#ffc83d", STAR_OFF="rgba(255,255,255,.35)";
+const starSvg=(on,off)=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2l2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 17l-5.4 2.9 1.1-6.1-4.5-4.2 6.1-.8z" fill="${on?STAR_ON:"none"}" stroke="${on?"#e0a800":off}" stroke-width="1.6" stroke-linejoin="round"/></svg>`;
+const starsOf=r=>Number.isInteger(r.stars)&&r.stars>=1&&r.stars<=5?r.stars:0;
+// kleine Sterne unten auf dem Titelbild
+const starsBadge=r=>{ const n=starsOf(r); if(!n) return "";
+  return `<span class="stars-badge" aria-label="${n} von 5 Sternen">${[1,2,3,4,5].map(i=>starSvg(i<=n,STAR_OFF)).join("")}</span>`; };
+
 function cardHtml(r,showCat){
   const n=arr(r.ingredients).length, s=arr(r.steps).length, c=catOf(r);
   const u=okId(r.cover)&&photoUrl(r.cover);
   return `<button class="card" type="button" data-open="${esc(r.id)}">
-    <div class="cover">${u?`<img src="${u}" alt="" style="object-position:50% ${coverY(r)}%">`:LEAF}</div>
+    <div class="cover">${u?`<img src="${u}" alt="" style="object-position:50% ${coverY(r)}%">`:LEAF}${starsBadge(r)}</div>
     <div class="card-body">${showCat&&c?`<span class="card-cat">${c.one}</span>`:""}<span class="card-title">${esc(r.title||"Ohne Namen")}</span>
     <span class="card-meta">${n} Zutaten · ${s} Schritte</span></div></button>`;
 }
@@ -428,9 +447,12 @@ function renderDetail(r){
   if(a && $("#detail").contains(a) && a.matches("[data-ing],[data-step],#rtitle,#cropY")) return;
   const ing=arr(r.ingredients), steps=arr(r.steps);
   $("#detail").innerHTML=`
-    <div class="hero">${heroHtml(r)}<button class="change" type="button" data-act="cover">${okId(r.cover)?"Bild ändern":"Titelbild hinzufügen"}</button></div>
+    <div class="hero">${heroHtml(r)}${starsBadge(r)}<button class="change" type="button" data-act="cover">${okId(r.cover)?"Bild ändern":"Titelbild hinzufügen"}</button></div>
     <textarea class="rtitle" id="rtitle" rows="1" maxlength="120" aria-label="Name des Rezepts">${esc(r.title)}</textarea>
     ${/^https:\/\/[^\s"]+$/.test(r.source||"")?`<a class="source" href="${esc(r.source)}" target="_blank" rel="noopener">Video ansehen ↗</a>`:""}
+    <div class="star-row" role="group" aria-label="Sterne vergeben">${[1,2,3,4,5].map(i=>
+      `<button type="button" class="star-btn" data-act="stars" data-v="${i}" aria-label="${i} ${i===1?"Stern":"Sterne"}" aria-pressed="${starsOf(r)===i}">${starSvg(i<=starsOf(r),"var(--muted)")}</button>`).join("")}
+      <span class="hint">${starsOf(r)?`${starsOf(r)} von 5`:"Noch keine Sterne"}</span></div>
     <div class="cat-row" role="group" aria-label="Kategorie">${CATS.map(c=>`<button type="button" class="chip" data-act="cat" data-cat="${c.id}" aria-pressed="${r.category===c.id}">${c.one}</button>`).join("")}</div>
     ${okId(r.cover)&&photoUrl(r.cover)?`<div class="crop"><div class="crop-prev"><img id="cropPrev" src="${photoUrl(r.cover)}" alt="" style="object-position:50% ${coverY(r)}%"></div>
       <label for="cropY">Ausschnitt für die Kachel<input type="range" id="cropY" min="0" max="100" value="${coverY(r)}"></label></div>`:""}
@@ -596,7 +618,7 @@ function renderSwipe(){
     const card=(r,cls)=>{ const u=okId(r.cover)&&photoUrl(r.cover); const c=catOf(r);
       return `<div class="scard ${cls}" data-sid="${esc(r.id)}">
         <span class="stamp like">LECKER</span><span class="stamp nope">NÖ</span>
-        <div class="simg">${u?`<img src="${u}" alt="" style="object-position:50% ${coverY(r)}%">`:LEAF}</div>
+        <div class="simg">${u?`<img src="${u}" alt="" style="object-position:50% ${coverY(r)}%">`:LEAF}${starsBadge(r)}</div>
         <div class="sbody">${c?`<span class="card-cat">${c.one}</span>`:""}<span class="stitle">${esc(r.title||"Ohne Namen")}</span>
         <span class="card-meta">${arr(r.ingredients).length} Zutaten · ${arr(r.steps).length} Schritte · noch ${left.length}</span></div></div>`; };
     html+=`<div class="stack">${left[1]?card(left[1],"under"):""}${card(left[0],"top")}</div>
@@ -705,6 +727,7 @@ document.addEventListener("click",e=>{
   if(nc){ newCat=newCat===nc.dataset.newcat?null:nc.dataset.newcat; renderNewCats(); return; }
   const b=e.target.closest("[data-act]"); if(!b) return;
   const r=cur(); if(!r) return;
+  if(b.dataset.act==="stars"){ const v=+b.dataset.v; r.stars=starsOf(r)===v?null:v; patch(r.id,{stars:r.stars}); render(); return; }
   if(b.dataset.act==="cat"){ r.category=r.category===b.dataset.cat?null:b.dataset.cat; patch(r.id,{category:r.category}); render(); return; }
   const act=b.dataset.act, k=+b.dataset.k;
   if(act==="cover"){ coverFor=r.id; $("#coverInput").click(); }
