@@ -53,8 +53,9 @@ header p{margin:8px 0 0;color:var(--muted)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
 .card{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;padding:0;text-align:left;color:inherit}
 .card:hover{border-color:var(--accent)}
-.cover{aspect-ratio:4/3;max-width:100%;width:100%;background:var(--accent-soft);display:grid;place-items:center;color:var(--accent);overflow:hidden}
-.cover img{width:100%;height:100%;object-fit:cover;display:block}
+.cover{aspect-ratio:4/5;max-width:100%;width:100%;background:var(--accent-soft);display:grid;place-items:center;color:var(--accent);overflow:hidden}
+.cover{position:relative}
+.cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 .cover svg{width:36px;height:36px;opacity:.7}
 .card-body{padding:10px 12px 12px;display:flex;flex-direction:column;gap:2px}
 .card-title{font-weight:600;overflow-wrap:anywhere}
@@ -67,8 +68,9 @@ header p{margin:8px 0 0;color:var(--muted)}
 .back{display:inline-flex;align-items:center;gap:6px;background:none;border:0;color:var(--accent);font-weight:600;padding:6px 0}
 .back svg{width:18px;height:18px}
 .detail{display:flex;flex-direction:column;gap:22px}
-.hero{position:relative;aspect-ratio:16/10;max-width:100%;border-radius:16px;overflow:hidden;background:var(--accent-soft);display:grid;place-items:center;color:var(--accent)}
-.hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hero{position:relative;aspect-ratio:4/3;max-width:100%;border-radius:16px;overflow:hidden;background:var(--accent-soft);display:grid;place-items:center;color:var(--accent)}
+.hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.hero .blur{position:absolute;inset:-20px;background-size:cover;background-position:center;filter:blur(22px) saturate(1.2);opacity:.85}
 .hero svg{width:48px;height:48px;opacity:.7}
 .hero .change{position:absolute;right:10px;bottom:10px;background:var(--surface);color:var(--ink);border:0;border-radius:999px;padding:6px 12px;font-size:.85rem;font-weight:500}
 .rtitle{resize:none;overflow:hidden;display:block;font-family:var(--display);font-size:clamp(1.8rem,6vw,2.4rem);line-height:1.1;border:0;border-bottom:1.5px solid transparent;background:none;color:var(--ink);padding:2px 0;width:100%}
@@ -93,6 +95,24 @@ header p{margin:8px 0 0;color:var(--muted)}
 .del{align-self:flex-start;background:none;border:0;color:var(--muted);font-size:.85rem;padding:4px 0;text-decoration:underline}
 .del.sure{color:#b4442f;font-weight:600}
 .status{font-size:.8rem;color:var(--muted)}
+/* Kategorien */
+.filters{flex:none;display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 12px;font-size:.88rem;font-weight:500}
+.chip[aria-pressed="true"]{background:var(--band);border-color:var(--band);color:var(--on-band)}
+.chip .n{opacity:.7;margin-left:4px;font-variant-numeric:tabular-nums}
+.cat-head{grid-column:1/-1;margin:10px 0 -2px;font-family:var(--display);font-weight:400;font-size:1.35rem;display:flex;align-items:baseline;gap:8px}
+.cat-head:first-child{margin-top:0}
+.cat-head span{font-family:var(--body);font-size:.85rem;color:var(--muted)}
+.cat-row{display:flex;flex-wrap:wrap;gap:6px}
+.card-cat{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);font-weight:600}
+/* Ausschnitt der Kachel */
+.crop{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.crop-prev{flex:none;width:56px;aspect-ratio:4/5;border-radius:8px;overflow:hidden;background:var(--accent-soft)}
+.crop-prev{position:relative}
+.crop-prev img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.crop label{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;font-size:.85rem;color:var(--muted)}
+.crop input{width:100%;accent-color:var(--accent)}
 .linkbar{flex:none;display:flex;flex-direction:column;gap:6px;padding-top:12px;border-top:1px solid var(--line)}
 .linkbar-label{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:600}
 .linkbar-row{display:flex;gap:8px}
@@ -135,11 +155,13 @@ header p{color:var(--on-band-muted)}
     <form class="newform" id="newForm" hidden autocomplete="off">
       <button class="pick" type="button" id="pickCover"><span id="pickLabel">Titelbild auswählen</span></button>
       <input id="newName" placeholder="Name, z.B. Linsen-Curry mit Kokos" maxlength="120" aria-label="Name des Rezepts">
+      <div class="cat-row" id="newCats" role="group" aria-label="Kategorie"></div>
       <div class="row-end">
         <button class="ghost" type="button" id="cancelNew">Abbrechen</button>
         <button class="btn primary" type="submit" id="saveNew">Anlegen</button>
       </div>
     </form>
+    <div class="filters" id="filters" role="group" aria-label="Nach Kategorie filtern"></div>
     <div class="scroll">
       <div class="grid" id="grid"></div>
       <div class="empty" id="empty" hidden>
@@ -230,7 +252,25 @@ async function uploadPhoto(blob){
   photoCache.set(id,url);
   return id;
 }
+function heroHtml(r){
+  const u=okId(r.cover)&&photoUrl(r.cover);
+  return u?`<div class="blur" style="background-image:url('${u}')"></div><img src="${u}" alt="">`:LEAF;
+}
 const coverHtml=(id,cls)=>{ const u=okId(id)&&photoUrl(id); return u?`<img src="${u}" alt="">`:LEAF; };
+
+/* ---------- Kategorien ---------- */
+const CATS=[
+  {id:"haupt", label:"Hauptgerichte", one:"Hauptgericht"},
+  {id:"vor",   label:"Vorspeisen",    one:"Vorspeise"},
+  {id:"suess", label:"Süßes",         one:"Süßes"},
+  {id:"snack", label:"Kleine Snacks", one:"Snack"},
+];
+const catOf=r=>CATS.find(c=>c.id===r.category);
+// Der Helfer antwortet mit dem deutschen Namen, z.B. "Hauptgericht"
+const catFromLabel=t=>{ const c=CATS.find(c=>c.one===t||c.label===t||c.id===t); return c?c.id:null; };
+let filter="alle", newCat=null;
+try{ const f=localStorage.getItem("rezepte.filter"); if(f) filter=f; }catch(e){}
+const coverY=r=>Number.isFinite(r.coverY)?Math.max(0,Math.min(100,r.coverY)):50;
 
 /* ---------- Zustand ---------- */
 let recipes=[], view=null, confirmDel=false, newBlob=null, coverFor=null;
@@ -244,26 +284,44 @@ function render(){
   $("#head").hidden=!!view; $("#listView").hidden=!!view; $("#detailView").hidden=!view;
   view?renderDetail(r):renderList();
 }
+function cardHtml(r,showCat){
+  const n=arr(r.ingredients).length, s=arr(r.steps).length, c=catOf(r);
+  const u=okId(r.cover)&&photoUrl(r.cover);
+  return `<button class="card" type="button" data-open="${esc(r.id)}">
+    <div class="cover">${u?`<img src="${u}" alt="" style="object-position:50% ${coverY(r)}%">`:LEAF}</div>
+    <div class="card-body">${showCat&&c?`<span class="card-cat">${c.one}</span>`:""}<span class="card-title">${esc(r.title||"Ohne Namen")}</span>
+    <span class="card-meta">${n} Zutaten · ${s} Schritte</span></div></button>`;
+}
 function renderList(){
   const list=[...recipes].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  const groups=[...CATS.map(c=>({...c,items:list.filter(r=>r.category===c.id)})),
+                {id:"ohne",label:"Noch ohne Kategorie",items:list.filter(r=>!catOf(r))}];
+  if(filter!=="alle" && !groups.some(g=>g.id===filter)) filter="alle";
+  const chips=[{id:"alle",label:"Alle",items:list},...groups.filter(g=>g.id!=="ohne"||g.items.length)];
+  $("#filters").hidden=list.length===0;
+  $("#filters").innerHTML=chips.map(g=>`<button type="button" class="chip" data-filter="${g.id}" aria-pressed="${filter===g.id}">${g.label}<span class="n">${g.items.length}</span></button>`).join("");
   $("#empty").hidden=list.length>0;
-  $("#grid").innerHTML=list.map(r=>{
-    const n=arr(r.ingredients).length, s=arr(r.steps).length;
-    return `<button class="card" type="button" data-open="${esc(r.id)}">
-      <div class="cover">${coverHtml(r.cover)}</div>
-      <div class="card-body"><span class="card-title">${esc(r.title||"Ohne Namen")}</span>
-      <span class="card-meta">${n} Zutaten · ${s} Schritte</span></div></button>`;
-  }).join("");
+  if(filter==="alle"){
+    $("#grid").innerHTML=groups.filter(g=>g.items.length).map(g=>
+      `<h3 class="cat-head">${g.label}<span>${g.items.length}</span></h3>`+g.items.map(r=>cardHtml(r,false)).join("")).join("");
+  }else{
+    const g=groups.find(g=>g.id===filter);
+    $("#grid").innerHTML=g.items.length?g.items.map(r=>cardHtml(r,false)).join("")
+      :`<p class="card-meta" style="grid-column:1/-1">Noch keine ${g.label}.</p>`;
+  }
 }
 function renderDetail(r){
   // nicht neu bauen, während jemand gerade in ein Feld tippt
   const a=document.activeElement;
-  if(a && $("#detail").contains(a) && a.matches("[data-ing],[data-step],#rtitle")) return;
+  if(a && $("#detail").contains(a) && a.matches("[data-ing],[data-step],#rtitle,#cropY")) return;
   const ing=arr(r.ingredients), steps=arr(r.steps);
   $("#detail").innerHTML=`
-    <div class="hero">${coverHtml(r.cover)}<button class="change" type="button" data-act="cover">${okId(r.cover)?"Bild ändern":"Titelbild hinzufügen"}</button></div>
+    <div class="hero">${heroHtml(r)}<button class="change" type="button" data-act="cover">${okId(r.cover)?"Bild ändern":"Titelbild hinzufügen"}</button></div>
     <textarea class="rtitle" id="rtitle" rows="1" maxlength="120" aria-label="Name des Rezepts">${esc(r.title)}</textarea>
     ${/^https:\/\/[^\s"]+$/.test(r.source||"")?`<a class="source" href="${esc(r.source)}" target="_blank" rel="noopener">Video ansehen ↗</a>`:""}
+    <div class="cat-row" role="group" aria-label="Kategorie">${CATS.map(c=>`<button type="button" class="chip" data-act="cat" data-cat="${c.id}" aria-pressed="${r.category===c.id}">${c.one}</button>`).join("")}</div>
+    ${okId(r.cover)&&photoUrl(r.cover)?`<div class="crop"><div class="crop-prev"><img id="cropPrev" src="${photoUrl(r.cover)}" alt="" style="object-position:50% ${coverY(r)}%"></div>
+      <label for="cropY">Ausschnitt für die Kachel<input type="range" id="cropY" min="0" max="100" value="${coverY(r)}"></label></div>`:""}
     <div class="sec">
       <h2>Zutaten <span>${ing.length}</span></h2>
       <ul class="items">${ing.map((t,k)=>`<li><span class="leaf"></span><input id="ing-${k}" data-ing="${k}" value="${esc(t)}" aria-label="Zutat ${k+1}"><button class="x" type="button" data-act="del-ing" data-k="${k}" aria-label="Zutat löschen">×</button></li>`).join("")}</ul>
@@ -286,8 +344,12 @@ $("#back").addEventListener("click",()=>{ if(history.state&&history.state.r) his
 
 /* ---------- Neues Rezept ---------- */
 $("#newBtn").addEventListener("click",()=>{ $("#newForm").hidden=false; $("#newBar").hidden=true; $("#newName").focus(); });
+function renderNewCats(){
+  $("#newCats").innerHTML=CATS.map(c=>`<button type="button" class="chip" data-newcat="${c.id}" aria-pressed="${newCat===c.id}">${c.one}</button>`).join("");
+}
+renderNewCats();
 function resetNew(){
-  newBlob=null; $("#newForm").reset(); $("#newForm").hidden=true; $("#newBar").hidden=false;
+  newBlob=null; newCat=null; renderNewCats(); $("#newForm").reset(); $("#newForm").hidden=true; $("#newBar").hidden=false;
   $("#pickCover").innerHTML='<span id="pickLabel">Titelbild auswählen</span>';
 }
 $("#cancelNew").addEventListener("click",resetNew);
@@ -301,7 +363,7 @@ $("#newForm").addEventListener("submit",async e=>{
   try{
     const cover=newBlob?await uploadPhoto(newBlob):null;
     const id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-    await root.child("recipes/"+id).set({title,cover,ingredients:[],steps:[],createdAt:Date.now()});
+    await root.child("recipes/"+id).set({title,cover,category:newCat,ingredients:[],steps:[],createdAt:Date.now()});
     $("#status").textContent=""; resetNew();
   }catch(err){ showErr(err); }
   $("#saveNew").disabled=false; $("#saveNew").textContent="Anlegen";
@@ -317,7 +379,7 @@ $("#coverInput").addEventListener("change",async e=>{
   $("#status").textContent="Bild wird hochgeladen …";
   try{
     const old=r.cover, id=await uploadPhoto(f);
-    r.cover=id; await patch(r.id,{cover:id});
+    r.cover=id; r.coverY=50; await patch(r.id,{cover:id,coverY:50});
     if(okId(old)) root.child("photos/"+old).remove().catch(()=>{});
     $("#status").textContent=""; render();
   }catch(err){ $("#status").textContent="Das Bild konnte nicht hochgeladen werden. Nimm ein JPG oder PNG."; }
@@ -345,7 +407,7 @@ $("#linkForm").addEventListener("submit",async e=>{
     const id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);
     const arrOf=v=>Array.isArray(v)?v.filter(x=>typeof x==="string"&&x.trim()).map(x=>x.slice(0,500)):[];
     await root.child("recipes/"+id).set({
-      title:String(data.title||"Neues Rezept").slice(0,120), cover,
+      title:String(data.title||"Neues Rezept").slice(0,120), cover, category:catFromLabel(data.category),
       ingredients:arrOf(data.ingredients), steps:arrOf(data.steps),
       source:/^https:\/\//.test(data.source||"")?data.source:url, createdAt:Date.now()
     });
@@ -362,8 +424,13 @@ $("#linkForm").addEventListener("submit",async e=>{
 /* ---------- Detail bearbeiten ---------- */
 document.addEventListener("click",e=>{
   const o=e.target.closest("[data-open]"); if(o){ openRecipe(o.dataset.open); return; }
+  const f=e.target.closest("[data-filter]");
+  if(f){ filter=f.dataset.filter; try{localStorage.setItem("rezepte.filter",filter)}catch(err){}; renderList(); return; }
+  const nc=e.target.closest("[data-newcat]");
+  if(nc){ newCat=newCat===nc.dataset.newcat?null:nc.dataset.newcat; renderNewCats(); return; }
   const b=e.target.closest("[data-act]"); if(!b) return;
   const r=cur(); if(!r) return;
+  if(b.dataset.act==="cat"){ r.category=r.category===b.dataset.cat?null:b.dataset.cat; patch(r.id,{category:r.category}); render(); return; }
   const act=b.dataset.act, k=+b.dataset.k;
   if(act==="cover"){ coverFor=r.id; $("#coverInput").click(); }
   if(act==="del-ing"){ r.ingredients=arr(r.ingredients).filter((_,i)=>i!==k); patch(r.id,{ingredients:r.ingredients}); render(); }
@@ -399,14 +466,15 @@ document.addEventListener("input",e=>{
   const t=e.target, r=cur(); if(!r) return;
   if(t.matches("textarea")) grow(t);
   let field=null;
-  if(t.id==="rtitle"){ r.title=t.value; field="title"; }
+  if(t.id==="cropY"){ r.coverY=+t.value; $("#cropPrev").style.objectPosition=`50% ${r.coverY}%`; field="coverY"; }
+  else if(t.id==="rtitle"){ r.title=t.value; field="title"; }
   else if(t.dataset.ing){ const a=arr(r.ingredients); a[+t.dataset.ing]=t.value; r.ingredients=a; field="ingredients"; }
   else if(t.dataset.step){ const a=arr(r.steps); a[+t.dataset.step]=t.value; r.steps=a; field="steps"; }
   if(!field) return;
   clearTimeout(timers[field]);
   timers[field]=setTimeout(()=>patch(r.id,{[field]:r[field]}),500);
 });
-document.addEventListener("focusout",e=>{ if(e.target.matches("[data-ing],[data-step],#rtitle")) setTimeout(render,600); });
+document.addEventListener("focusout",e=>{ if(e.target.matches("[data-ing],[data-step],#rtitle,#cropY")) setTimeout(render,600); });
 
 /* ---------- Start ---------- */
 history.replaceState(null,"","#"+CODE);
