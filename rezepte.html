@@ -93,6 +93,14 @@ header p{margin:8px 0 0;color:var(--muted)}
 .del{align-self:flex-start;background:none;border:0;color:var(--muted);font-size:.85rem;padding:4px 0;text-decoration:underline}
 .del.sure{color:#b4442f;font-weight:600}
 .status{font-size:.8rem;color:var(--muted)}
+.linkbar{flex:none;display:flex;flex-direction:column;gap:6px;padding-top:12px;border-top:1px solid var(--line)}
+.linkbar-label{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.linkbar-row{display:flex;gap:8px}
+.linkbar input{flex:1;min-width:0;font:inherit;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink)}
+.linkbar input:focus{outline:none;border-color:var(--accent)}
+.linkbar .btn:disabled{opacity:.6;cursor:progress}
+.source{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-weight:600;text-decoration:none;font-size:.9rem;margin-top:-12px}
+.source:hover{text-decoration:underline}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
 /* Rahmen: farbiger Hintergrund außen, die App als Karte mit Kopfband */
@@ -136,9 +144,16 @@ header p{color:var(--on-band-muted)}
       <div class="grid" id="grid"></div>
       <div class="empty" id="empty" hidden>
         <strong>Noch keine Rezepte</strong>
-        <span>Tipp auf „+ Rezept hinzufügen“, wähl ein Titelbild und gib dem Rezept einen Namen.</span>
+        <span>Tipp auf „+ Rezept hinzufügen“, wähl ein Titelbild und gib dem Rezept einen Namen. Oder füg unten einen TikTok- oder YouTube-Link ein.</span>
       </div>
     </div>
+    <form class="linkbar" id="linkForm" autocomplete="off">
+      <span class="linkbar-label">Rezept aus Video</span>
+      <div class="linkbar-row">
+        <input id="linkInput" type="url" inputmode="url" placeholder="TikTok- oder YouTube-Link einfügen" aria-label="Link zum Video">
+        <button class="btn primary" type="submit" id="linkBtn">Erstellen</button>
+      </div>
+    </form>
   </section>
 
   <section class="panel" id="detailView" hidden>
@@ -248,6 +263,7 @@ function renderDetail(r){
   $("#detail").innerHTML=`
     <div class="hero">${coverHtml(r.cover)}<button class="change" type="button" data-act="cover">${okId(r.cover)?"Bild ändern":"Titelbild hinzufügen"}</button></div>
     <input class="rtitle" id="rtitle" maxlength="120" aria-label="Name des Rezepts" value="${esc(r.title)}">
+    ${/^https:\/\/[^\s"]+$/.test(r.source||"")?`<a class="source" href="${esc(r.source)}" target="_blank" rel="noopener">Video ansehen ↗</a>`:""}
     <div class="sec">
       <h2>Zutaten <span>${ing.length}</span></h2>
       <ul class="items">${ing.map((t,k)=>`<li><span class="leaf"></span><input id="ing-${k}" data-ing="${k}" value="${esc(t)}" aria-label="Zutat ${k+1}"><button class="x" type="button" data-act="del-ing" data-k="${k}" aria-label="Zutat löschen">×</button></li>`).join("")}</ul>
@@ -305,6 +321,42 @@ $("#coverInput").addEventListener("change",async e=>{
     if(okId(old)) root.child("photos/"+old).remove().catch(()=>{});
     $("#status").textContent=""; render();
   }catch(err){ $("#status").textContent="Das Bild konnte nicht hochgeladen werden. Nimm ein JPG oder PNG."; }
+});
+
+/* ---------- Rezept aus einem Video-Link ---------- */
+// Adresse deines Cloudflare-Helfers, z.B. "https://rezept-helfer.deinname.workers.dev"
+const WORKER_URL = "https://rezept-helfer.niiikkbuild.workers.dev";
+$("#linkForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const url=$("#linkInput").value.trim();
+  if(!url){ $("#linkInput").focus(); return; }
+  if(!WORKER_URL){ $("#status").textContent="Der Rezept-Helfer ist noch nicht eingerichtet."; return; }
+  if(!root) return;
+  const btn=$("#linkBtn"); btn.disabled=true; btn.textContent="Liest Video …";
+  $("#status").textContent="Claude schreibt das Rezept, das dauert ein paar Sekunden …";
+  try{
+    const res=await fetch(WORKER_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url})});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.error||"Der Rezept-Helfer hat nicht geantwortet.");
+    let cover=null;
+    if(typeof data.cover==="string" && data.cover.startsWith("data:image/")){
+      try{ cover=await uploadPhoto(await (await fetch(data.cover)).blob()); }catch(err){}
+    }
+    const id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    const arrOf=v=>Array.isArray(v)?v.filter(x=>typeof x==="string"&&x.trim()).map(x=>x.slice(0,500)):[];
+    await root.child("recipes/"+id).set({
+      title:String(data.title||"Neues Rezept").slice(0,120), cover,
+      ingredients:arrOf(data.ingredients), steps:arrOf(data.steps),
+      source:/^https:\/\//.test(data.source||"")?data.source:url, createdAt:Date.now()
+    });
+    $("#linkInput").value="";
+    const n=arrOf(data.ingredients).length;
+    $("#status").textContent = n?"":"Im Video stand kein Rezept. Trag Zutaten und Schritte selbst ein.";
+    openRecipe(id);
+  }catch(err){
+    $("#status").textContent = err instanceof TypeError ? "Keine Verbindung zum Rezept-Helfer." : err.message;
+  }
+  btn.disabled=false; btn.textContent="Erstellen";
 });
 
 /* ---------- Detail bearbeiten ---------- */
