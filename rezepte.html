@@ -145,6 +145,57 @@ body{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/20
 .filters.more-right{-webkit-mask-image:linear-gradient(90deg,#000 82%,transparent);mask-image:linear-gradient(90deg,#000 82%,transparent)}
 .filters.more-left{-webkit-mask-image:linear-gradient(90deg,transparent,#000 18%);mask-image:linear-gradient(90deg,transparent,#000 18%)}
 .filters.more-left.more-right{-webkit-mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent);mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent)}
+
+/* Swipen */
+.swipe-who{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:.9rem;color:var(--muted)}
+.swipe-who b{color:var(--ink);font-weight:600}
+.linkish{background:none;border:0;padding:0;color:var(--accent);font-weight:600;text-decoration:underline;font-size:.9rem}
+.stack{position:relative;height:min(58vh,440px);max-width:340px;width:100%;margin:10px auto 0}
+.scard{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:22px;overflow:hidden;
+  box-shadow:0 16px 34px -18px var(--shadow);touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;will-change:transform}
+.scard.under{transform:scale(.94) translateY(14px);opacity:.75;pointer-events:none}
+.scard.fly{transition:transform .32s ease-in,opacity .32s ease-in}
+.scard.back{transition:transform .2s ease-out}
+.simg{position:relative;flex:1;min-height:0;background:var(--accent-soft);display:grid;place-items:center;color:var(--accent)}
+.simg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
+.simg svg{width:56px;height:56px;opacity:.6}
+.sbody{padding:14px 16px 16px;display:flex;flex-direction:column;gap:2px}
+.sbody .stitle{font-family:var(--display);font-size:1.5rem;line-height:1.15;overflow-wrap:anywhere}
+.stamp{position:absolute;top:18px;z-index:2;padding:4px 12px;border:3px solid;border-radius:10px;font-weight:700;font-size:1.25rem;letter-spacing:.08em;
+  background:rgba(255,255,255,.88);opacity:0;pointer-events:none}
+.stamp.like{left:16px;color:#3f7a35;border-color:#3f7a35;transform:rotate(-12deg)}
+.stamp.nope{right:16px;color:#b4442f;border-color:#b4442f;transform:rotate(12deg)}
+.votes{display:flex;justify-content:center;gap:28px;margin-top:16px}
+.vbtn{width:64px;height:64px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;box-shadow:0 8px 18px -10px var(--shadow)}
+.vbtn svg{width:28px;height:28px}
+.vbtn.no{color:#b4442f}
+.vbtn.yes{color:#c8456b}
+.vbtn:active{transform:scale(.92)}
+.swipe-done{text-align:center;padding:26px 10px;color:var(--muted);display:flex;flex-direction:column;gap:6px;align-items:center}
+.swipe-done strong{font-family:var(--display);font-weight:400;font-size:1.5rem;color:var(--ink)}
+.who-pick{display:flex;flex-direction:column;gap:14px;max-width:360px;margin:6px auto 0;width:100%}
+.who-pick h3{margin:0;font-family:var(--display);font-weight:400;font-size:1.6rem}
+.who-pick p{margin:0;color:var(--muted)}
+.who-names{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.who-names input{min-width:0;font:inherit;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink)}
+.who-names input:focus{outline:none;border-color:var(--accent)}
+.who-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.match-sec{margin-top:26px;display:flex;flex-direction:column;gap:10px}
+.match-sec h3{margin:0;font-family:var(--display);font-weight:400;font-size:1.35rem;display:flex;align-items:baseline;gap:8px}
+.match-sec h3 span{font-family:var(--body);font-size:.85rem;color:var(--muted)}
+.modal{position:fixed;inset:0;z-index:40;display:grid;place-items:center;background:rgba(20,35,18,.5);
+  padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));animation:fade .15s ease-out}
+.sheet{width:100%;max-width:360px;background:var(--surface);border-radius:24px;overflow:hidden;box-shadow:0 24px 60px -20px rgba(20,35,18,.6);animation:pop .25s ease-out;text-align:center}
+.sheet .mimg{position:relative;aspect-ratio:4/3;background:var(--accent-soft);display:grid;place-items:center;color:var(--accent)}
+.sheet .mimg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.sheet .mimg svg{width:56px;height:56px;opacity:.6}
+.sheet .mbody{padding:18px 20px 20px;display:flex;flex-direction:column;gap:10px}
+.sheet h3{margin:0;font-family:var(--display);font-weight:400;font-size:2.2rem;color:#c8456b}
+.sheet p{margin:0;color:var(--muted)}
+.sheet p b{color:var(--ink)}
+@keyframes fade{from{opacity:0}}
+@keyframes pop{from{transform:scale(.9);opacity:0}}
+@media (prefers-reduced-motion:reduce){.scard.fly,.scard.back{transition:none}}
 </style>
 </head>
 <body>
@@ -159,7 +210,7 @@ body{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/20
   </header>
 
   <section class="panel" id="listView">
-    <div class="row-end" id="newBar" style="justify-content:flex-start"><button class="btn primary" id="newBtn" type="button">+ Rezept hinzufügen</button></div>
+    <div class="row-end" id="newBar" style="justify-content:flex-start"><button class="btn primary" id="newBtn" type="button">+ Rezept hinzufügen</button><button class="btn" id="swipeBtn" type="button">♥ Swipen</button></div>
     <form class="newform" id="newForm" hidden autocomplete="off">
       <button class="pick" type="button" id="pickCover"><span id="pickLabel">Titelbild auswählen</span></button>
       <input id="newName" placeholder="Name, z.B. Linsen-Curry mit Kokos" maxlength="120" aria-label="Name des Rezepts">
@@ -193,8 +244,27 @@ body{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/20
     <div class="scroll"><div class="detail" id="detail"></div></div>
   </section>
 
+  <section class="panel" id="swipeView" hidden>
+    <div class="topbar">
+      <button class="back" id="swipeBack" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Alle Rezepte</button>
+      <button class="ghost" id="newRound" type="button">Neue Runde</button>
+    </div>
+    <div class="scroll" id="swipeBody"></div>
+  </section>
+
   <div class="status" id="status"></div>
   <input type="file" id="coverInput" accept="image/*" hidden>
+  <div class="modal" id="matchModal" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="matchTitle">
+      <div class="mimg" id="matchImg"></div>
+      <div class="mbody">
+        <h3 id="matchTitle">Match!</h3>
+        <p id="matchText"></p>
+        <button class="btn primary" id="matchOpen" type="button">Rezept ansehen</button>
+        <button class="ghost" id="matchClose" type="button">Weiter swipen</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -312,6 +382,7 @@ const coverY=r=>Number.isFinite(r.coverY)?Math.max(0,Math.min(100,r.coverY)):50;
 })();
 
 /* ---------- Zustand ---------- */
+let swipeOpen=false;
 let recipes=[], view=null, confirmDel=false, newBlob=null, coverFor=null;
 const arr=v=>Array.isArray(v)?v.filter(x=>typeof x==="string"):(v&&typeof v==="object"?Object.values(v).filter(x=>typeof x==="string"):[]);
 const cur=()=>recipes.find(r=>r.id===view);
@@ -320,8 +391,10 @@ const cur=()=>recipes.find(r=>r.id===view);
 function render(){
   $("#count").textContent = recipes.length===1?"1 Rezept":`${recipes.length} Rezepte`;
   const r=cur(); if(view && !r) view=null;
-  $("#head").hidden=!!view; $("#listView").hidden=!!view; $("#detailView").hidden=!view;
-  view?renderDetail(r):renderList();
+  const mode = view ? "detail" : swipeOpen ? "swipe" : "list";
+  $("#head").hidden = mode!=="list"; $("#listView").hidden = mode!=="list";
+  $("#detailView").hidden = mode!=="detail"; $("#swipeView").hidden = mode!=="swipe";
+  if(mode==="detail") renderDetail(r); else if(mode==="swipe") renderSwipe(); else renderList();
 }
 function cardHtml(r,showCat){
   const n=arr(r.ingredients).length, s=arr(r.steps).length, c=catOf(r);
@@ -377,8 +450,8 @@ function renderDetail(r){
 const grow=t=>{ t.style.height="auto"; t.style.height=t.scrollHeight+"px"; };
 
 /* ---------- Navigation (Zurück-Taste des Handys funktioniert) ---------- */
-function openRecipe(id){ view=id; confirmDel=false; history.pushState({r:id},"","#"+CODE); render(); $("#detailView .scroll").scrollTop=0; }
-addEventListener("popstate",e=>{ view=e.state&&e.state.r||null; confirmDel=false; render(); });
+function openRecipe(id){ view=id; confirmDel=false; history.pushState({r:id,swipe:swipeOpen},"","#"+CODE); render(); $("#detailView .scroll").scrollTop=0; }
+addEventListener("popstate",e=>{ view=e.state&&e.state.r||null; swipeOpen=!!(e.state&&e.state.swipe); confirmDel=false; render(); });
 $("#back").addEventListener("click",()=>{ if(history.state&&history.state.r) history.back(); else { view=null; render(); } });
 
 /* ---------- Neues Rezept ---------- */
@@ -460,6 +533,169 @@ $("#linkForm").addEventListener("submit",async e=>{
   btn.disabled=false; btn.textContent="Erstellen";
 });
 
+/* ---------- Swipen: zwei Personen, Matches werden vorgeschlagen ---------- */
+let people={a:"",b:""}, swipe={round:null,votes:{}}, roundConfirm=false, dragging=false, swipePending=false;
+let me=null; try{ me=localStorage.getItem("rezepte.me"); }catch(e){}
+if(me!=="a" && me!=="b") me=null;
+const other=p=>p==="a"?"b":"a";
+const nameOf=p=>(people[p]||"").trim()||(p==="a"?"Person 1":"Person 2");
+const roundVotes=p=>(swipe.votes&&swipe.votes[swipe.round]&&swipe.votes[swipe.round][p])||{};
+// gleiche Reihenfolge auf beiden Handys, pro Runde neu gemischt
+const seeded=(t)=>{ let h=2166136261; for(const c of t){ h^=c.charCodeAt(0); h=Math.imul(h,16777619); } return h>>>0; };
+const deck=()=>[...recipes].sort((x,y)=>seeded(swipe.round+x.id)-seeded(swipe.round+y.id));
+const matches=()=>{ const A=roundVotes("a"), B=roundVotes("b"); return recipes.filter(r=>A[r.id]===1 && B[r.id]===1); };
+const HEART='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" fill="currentColor"/></svg>';
+const CROSS='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>';
+
+function openSwipe(){
+  swipeOpen=true; view=null; roundConfirm=false;
+  history.pushState({swipe:true},"","#"+CODE);
+  if(root && !swipe.round) root.child("swipe/round").set("r"+Date.now().toString(36)).catch(showErr);
+  render();
+}
+$("#swipeBtn").addEventListener("click",openSwipe);
+$("#swipeBack").addEventListener("click",()=>{ if(history.state&&history.state.swipe) history.back(); else { swipeOpen=false; render(); } });
+$("#newRound").addEventListener("click",()=>{
+  if(!roundConfirm){ roundConfirm=true; $("#newRound").textContent="Wirklich neu starten?"; return; }
+  roundConfirm=false; $("#newRound").textContent="Neue Runde";
+  root.child("swipe").set({round:"r"+Date.now().toString(36)}).catch(showErr);
+  $("#status").textContent="Neue Runde gestartet. Alle Rezepte kommen wieder.";
+});
+
+function renderSwipe(){
+  if(dragging){ swipePending=true; return; }
+  const body=$("#swipeBody");
+  $("#newRound").hidden=!me;
+  if(!roundConfirm) $("#newRound").textContent="Neue Runde";
+  // Wer swipet hier?
+  if(!me){
+    const a=document.activeElement;
+    if(a && body.contains(a) && a.matches(".who-names input")) return;
+    body.innerHTML=`<div class="who-pick">
+      <h3>Wer swipet hier?</h3>
+      <p>Tragt eure Namen ein und wähl aus, wer du bist. Das Handy merkt sich das.</p>
+      <div class="who-names">
+        <input id="nameA" maxlength="20" placeholder="Person 1" aria-label="Name Person 1" value="${esc(people.a)}">
+        <input id="nameB" maxlength="20" placeholder="Person 2" aria-label="Name Person 2" value="${esc(people.b)}">
+      </div>
+      <div class="who-btns">
+        <button class="btn primary" type="button" data-me="a">Ich bin ${esc(nameOf("a"))}</button>
+        <button class="btn primary" type="button" data-me="b">Ich bin ${esc(nameOf("b"))}</button>
+      </div></div>`;
+    return;
+  }
+  const mine=roundVotes(me), theirs=roundVotes(other(me));
+  const left=deck().filter(r=>mine[r.id]===undefined);
+  const theirCount=recipes.filter(r=>theirs[r.id]!==undefined).length;
+  const m=matches();
+  let html=`<div class="swipe-who"><span>Du bist <b>${esc(nameOf(me))}</b> · <button class="linkish" type="button" data-me="">wechseln</button></span>
+    <span>${esc(nameOf(other(me)))}: ${theirCount} von ${recipes.length}</span></div>`;
+  if(!recipes.length){
+    html+=`<div class="swipe-done"><strong>Noch keine Rezepte</strong><span>Legt zuerst ein paar Rezepte an, dann könnt ihr swipen.</span></div>`;
+  }else if(left.length){
+    const card=(r,cls)=>{ const u=okId(r.cover)&&photoUrl(r.cover); const c=catOf(r);
+      return `<div class="scard ${cls}" data-sid="${esc(r.id)}">
+        <span class="stamp like">LECKER</span><span class="stamp nope">NÖ</span>
+        <div class="simg">${u?`<img src="${u}" alt="" style="object-position:50% ${coverY(r)}%">`:LEAF}</div>
+        <div class="sbody">${c?`<span class="card-cat">${c.one}</span>`:""}<span class="stitle">${esc(r.title||"Ohne Namen")}</span>
+        <span class="card-meta">${arr(r.ingredients).length} Zutaten · ${arr(r.steps).length} Schritte · noch ${left.length}</span></div></div>`; };
+    html+=`<div class="stack">${left[1]?card(left[1],"under"):""}${card(left[0],"top")}</div>
+      <div class="votes"><button class="vbtn no" type="button" data-vote="0" aria-label="Nö">${CROSS}</button>
+      <button class="vbtn yes" type="button" data-vote="1" aria-label="Lecker">${HEART}</button></div>`;
+  }else{
+    const waiting=theirCount<recipes.length;
+    html+=`<div class="swipe-done"><strong>Du bist durch</strong><span>${waiting?`Warte auf ${esc(nameOf(other(me)))}. Matches erscheinen sofort.`:"Ihr seid beide fertig."}</span></div>`;
+  }
+  html+=`<div class="match-sec"><h3>Das kocht ihr<span>${m.length}</span></h3>${m.length
+    ?`<div class="grid">${m.map(r=>cardHtml(r,true)).join("")}</div>`
+    :`<p class="card-meta">Noch keine Matches. Wenn ihr beide dasselbe Rezept liked, steht es hier.</p>`}</div>`;
+  body.innerHTML=html;
+}
+
+// Namen und Auswahl
+document.addEventListener("input",e=>{
+  if(e.target.id!=="nameA" && e.target.id!=="nameB") return;
+  const p=e.target.id==="nameA"?"a":"b";
+  people[p]=e.target.value;
+  const btn=document.querySelector(`[data-me="${p}"]`); if(btn) btn.textContent="Ich bin "+nameOf(p);
+  clearTimeout(timers["name"+p]);
+  const v=e.target.value.trim().slice(0,20);
+  timers["name"+p]=setTimeout(()=>root&&root.child("people/"+p).set(v).catch(showErr),500);
+});
+document.addEventListener("click",e=>{
+  const w=e.target.closest("[data-me]"); if(!w) return;
+  me=w.dataset.me||null;
+  try{ me?localStorage.setItem("rezepte.me",me):localStorage.removeItem("rezepte.me"); }catch(err){}
+  renderSwipe();
+});
+
+// Abstimmen
+function vote(val){
+  const top=document.querySelector(".scard.top"); if(!top||!me||!swipe.round) return;
+  const id=top.dataset.sid;
+  top.classList.add("fly");
+  top.style.transform=`translateX(${val?140:-140}%) rotate(${val?24:-24}deg)`;
+  top.style.opacity="0";
+  if(!swipe.votes[swipe.round]) swipe.votes[swipe.round]={};
+  if(!swipe.votes[swipe.round][me]) swipe.votes[swipe.round][me]={};
+  swipe.votes[swipe.round][me][id]=val;
+  root.child(`swipe/votes/${swipe.round}/${me}/${id}`).set(val).catch(showErr);
+  setTimeout(()=>{ renderSwipe(); checkMatches(); },300);
+}
+document.addEventListener("click",e=>{ const b=e.target.closest("[data-vote]"); if(b) vote(+b.dataset.vote); });
+document.addEventListener("keydown",e=>{
+  if($("#swipeView").hidden || !$("#matchModal").hidden || e.target.matches("input,textarea")) return;
+  if(e.key==="ArrowRight") vote(1); if(e.key==="ArrowLeft") vote(0);
+});
+// Wischen mit Finger oder Maus
+(()=>{
+  let start=null, card=null;
+  document.addEventListener("pointerdown",e=>{
+    const c=e.target.closest(".scard.top"); if(!c) return;
+    card=c; start={x:e.clientX,y:e.clientY}; dragging=true;
+    c.classList.remove("back"); c.setPointerCapture(e.pointerId);
+  });
+  document.addEventListener("pointermove",e=>{
+    if(!card) return;
+    const dx=e.clientX-start.x, dy=(e.clientY-start.y)*.3;
+    card.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/18}deg)`;
+    card.querySelector(".like").style.opacity=Math.max(0,Math.min(1,dx/90));
+    card.querySelector(".nope").style.opacity=Math.max(0,Math.min(1,-dx/90));
+  });
+  const end=e=>{
+    if(!card) return;
+    const dx=e.clientX-start.x, c=card; card=null; dragging=false;
+    if(Math.abs(dx)>100){ vote(dx>0?1:0); }
+    else{
+      c.classList.add("back"); c.style.transform="";
+      c.querySelector(".like").style.opacity=0; c.querySelector(".nope").style.opacity=0;
+      if(Math.abs(dx)<6 && e.type==="pointerup") openRecipe(c.dataset.sid);   // antippen öffnet das Rezept
+      else if(swipePending){ swipePending=false; setTimeout(renderSwipe,220); }
+    }
+  };
+  document.addEventListener("pointerup",end);
+  document.addEventListener("pointercancel",end);
+})();
+
+// Match-Fenster
+let matchShowing=null;
+function seenKey(){ return "rezepte.seen."+swipe.round; }
+function checkMatches(){
+  if(!me || !swipe.round || matchShowing) return;
+  let seen=[]; try{ seen=JSON.parse(localStorage.getItem(seenKey())||"[]"); }catch(e){}
+  const r=matches().find(r=>!seen.includes(r.id)); if(!r) return;
+  seen.push(r.id); try{ localStorage.setItem(seenKey(),JSON.stringify(seen)); }catch(e){}
+  matchShowing=r.id;
+  const u=okId(r.cover)&&photoUrl(r.cover);
+  $("#matchImg").innerHTML=u?`<img src="${u}" alt="" style="object-position:50% ${coverY(r)}%">`:LEAF;
+  $("#matchText").innerHTML=`${esc(nameOf("a"))} und ${esc(nameOf("b"))} wollen beide <b>${esc(r.title||"dieses Rezept")}</b> kochen.`;
+  $("#matchModal").hidden=false;
+}
+const closeMatch=()=>{ $("#matchModal").hidden=true; matchShowing=null; setTimeout(checkMatches,250); };
+$("#matchClose").addEventListener("click",closeMatch);
+$("#matchOpen").addEventListener("click",()=>{ const id=matchShowing; closeMatch(); if(id) openRecipe(id); });
+$("#matchModal").addEventListener("click",e=>{ if(e.target.id==="matchModal") closeMatch(); });
+
 /* ---------- Detail bearbeiten ---------- */
 document.addEventListener("click",e=>{
   const o=e.target.closest("[data-open]"); if(o){ openRecipe(o.dataset.open); return; }
@@ -522,6 +758,18 @@ if(!root){
   $("#count").textContent="Keine Verbindung";
   $("#status").textContent="Die Datenbank konnte nicht geladen werden. Prüf die Internetverbindung und lade die Seite neu.";
 }else{
+  root.child("people").on("value",snap=>{
+    const v=snap.val()||{}, typing=document.activeElement&&document.activeElement.id;
+    // was gerade getippt wird, nicht mit älterem Stand überschreiben
+    people={a:typing==="nameA"?people.a:(v.a||""), b:typing==="nameB"?people.b:(v.b||"")};
+    if(swipeOpen && !view) renderSwipe();
+  });
+  root.child("swipe").on("value",snap=>{
+    swipe={round:null,votes:{},...(snap.val()||{})};
+    if(swipeOpen && !swipe.round) root.child("swipe/round").set("r"+Date.now().toString(36)).catch(()=>{});
+    if(swipeOpen && !view) renderSwipe();
+    if(swipeOpen) checkMatches();
+  });
   root.child("recipes").on("value",snap=>{
     const v=snap.val()||{};
     recipes=Object.entries(v).map(([id,d])=>({id,...d}));
