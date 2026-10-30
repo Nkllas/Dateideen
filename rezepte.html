@@ -71,7 +71,7 @@ header p{margin:8px 0 0;color:var(--muted)}
 .hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .hero svg{width:48px;height:48px;opacity:.7}
 .hero .change{position:absolute;right:10px;bottom:10px;background:var(--surface);color:var(--ink);border:0;border-radius:999px;padding:6px 12px;font-size:.85rem;font-weight:500}
-.rtitle{font-family:var(--display);font-size:clamp(1.8rem,6vw,2.4rem);line-height:1.1;border:0;border-bottom:1.5px solid transparent;background:none;color:var(--ink);padding:2px 0;width:100%}
+.rtitle{resize:none;overflow:hidden;display:block;font-family:var(--display);font-size:clamp(1.8rem,6vw,2.4rem);line-height:1.1;border:0;border-bottom:1.5px solid transparent;background:none;color:var(--ink);padding:2px 0;width:100%}
 .rtitle:focus{outline:none;border-bottom-color:var(--accent)}
 .sec{display:flex;flex-direction:column;gap:10px}
 .sec h2{margin:0;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:600;display:flex;justify-content:space-between}
@@ -262,7 +262,7 @@ function renderDetail(r){
   const ing=arr(r.ingredients), steps=arr(r.steps);
   $("#detail").innerHTML=`
     <div class="hero">${coverHtml(r.cover)}<button class="change" type="button" data-act="cover">${okId(r.cover)?"Bild ändern":"Titelbild hinzufügen"}</button></div>
-    <input class="rtitle" id="rtitle" maxlength="120" aria-label="Name des Rezepts" value="${esc(r.title)}">
+    <textarea class="rtitle" id="rtitle" rows="1" maxlength="120" aria-label="Name des Rezepts">${esc(r.title)}</textarea>
     ${/^https:\/\/[^\s"]+$/.test(r.source||"")?`<a class="source" href="${esc(r.source)}" target="_blank" rel="noopener">Video ansehen ↗</a>`:""}
     <div class="sec">
       <h2>Zutaten <span>${ing.length}</span></h2>
@@ -275,7 +275,7 @@ function renderDetail(r){
       <form class="adder" id="addStep" autocomplete="off"><textarea id="newStep" rows="2" placeholder="Nächster Schritt, z.B. Zwiebeln glasig anbraten" aria-label="Neuer Schritt"></textarea><button class="btn" type="submit">+</button></form>
     </div>
     <button class="del${confirmDel?" sure":""}" type="button" data-act="del-recipe">${confirmDel?"Wirklich löschen?":"Rezept löschen"}</button>`;
-  $("#detail").querySelectorAll("textarea[data-step]").forEach(grow);
+  $("#detail").querySelectorAll("textarea[data-step],#rtitle").forEach(grow);
 }
 const grow=t=>{ t.style.height="auto"; t.style.height=t.scrollHeight+"px"; };
 
@@ -391,6 +391,7 @@ document.addEventListener("submit",e=>{
 });
 // Enter im Schritt-Feld fügt hinzu, Shift+Enter macht eine neue Zeile
 document.addEventListener("keydown",e=>{
+  if(e.target.id==="rtitle" && e.key==="Enter"){ e.preventDefault(); e.target.blur(); }
   if(e.target.id==="newStep" && e.key==="Enter" && !e.shiftKey){ e.preventDefault(); $("#addStep").requestSubmit(); }
 });
 const timers={};
