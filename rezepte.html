@@ -137,6 +137,14 @@ header p{color:var(--on-band-muted)}
   .wrap{padding:0 16px 10px;border-radius:22px}header{margin:0 -16px;padding:22px 16px 20px}}
 .topbar{padding-top:16px}
 .btn.primary{background:var(--band)}
+
+/* Hintergrund: Kritzeleien wie von Kinderhand */
+body{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420' viewBox='0 0 420 420' fill='none' stroke='rgba%28255,255,255,0.15%29' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M62 64c12-17 38-15 43 4c5 21-17 36-34 31c-15-5-20-22-9-35z'/%3E%3Cpath d='M92 96c10 22 30 56 50 86'/%3E%3Cpath d='M78 101c12 24 32 58 52 88'/%3E%3Cpath d='M130 189c4 7 12 3 12-7'/%3E%3Cpath d='M318 172c-31-38-33-108 1-121c32 9 28 81-3 121'/%3E%3Cpath d='M318 172c-13-39-11-98 3-115c15 15 13 79-5 116'/%3E%3Cpath d='M313 172l-2 48c0 9 13 9 13 0l-3-47'/%3E%3Cpath d='M52 284c-1 30 1 58 9 76c38 9 76 8 84-1c8-20 9-48 6-76'/%3E%3Cpath d='M42 284c38-7 78-7 116 0'/%3E%3Cpath d='M43 300c-15 0-17 15-3 15'/%3E%3Cpath d='M157 300c15 0 17 15 3 15'/%3E%3Cpath d='M84 268c-9-9 1-18-6-26c-6-7 2-14-2-20'/%3E%3Cpath d='M114 268c-9-9 1-18-6-26c-6-7 2-14-2-20'/%3E%3Cpath d='M268 392c1-28 2-52 5-74'/%3E%3Cpath d='M252 314c1-14 1-30 3-46'/%3E%3Cpath d='M265 316c0-16 0-32 2-48'/%3E%3Cpath d='M279 316c0-15-1-31-1-46'/%3E%3Cpath d='M250 314c11 12 21 12 30 1'/%3E%3Cpath d='M352 236c18 10 30 30 26 40c-6 9-28-2-44-22c-8-11 6-24 18-18z'/%3E%3Cpath d='M345 240l7 8'/%3E%3Cpath d='M360 252l6 8'/%3E%3Cpath d='M342 231c-6-10-4-20 3-22'/%3E%3Cpath d='M346 228c2-10 9-15 15-12'/%3E%3Cpath d='M341 233c-10-4-17-1-18 5'/%3E%3Cpath d='M170 40c22-4 46 4 48 20c2 18-24 26-46 22c-20-4-24-38-2-42z'/%3E%3Cpath d='M216 58c22 6 44 12 66 22'/%3E%3Cpath d='M218 66c22 6 42 12 62 20'/%3E%3Cpath d='M210 210l4 12m-10-6l12 0'/%3E%3Cpath d='M372 150l3 9m-8-4l10 0'/%3E%3Cpath d='M30 200l3 9m-8-4l10 0'/%3E%3C/svg%3E"),radial-gradient(var(--dots) 1.2px,transparent 1.2px);background-size:420px 420px,18px 18px}
+.filters{cursor:grab;user-select:none;-webkit-user-select:none}
+.filters.dragging{cursor:grabbing}
+.filters.more-right{-webkit-mask-image:linear-gradient(90deg,#000 82%,transparent);mask-image:linear-gradient(90deg,#000 82%,transparent)}
+.filters.more-left{-webkit-mask-image:linear-gradient(90deg,transparent,#000 18%);mask-image:linear-gradient(90deg,transparent,#000 18%)}
+.filters.more-left.more-right{-webkit-mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent);mask-image:linear-gradient(90deg,transparent,#000 18%,#000 82%,transparent)}
 </style>
 </head>
 <body>
@@ -272,6 +280,36 @@ const catFromLabel=t=>{ const c=CATS.find(c=>c.one===t||c.label===t||c.id===t); 
 let filter="alle", newCat=null;
 try{ const f=localStorage.getItem("rezepte.filter"); if(f) filter=f; }catch(e){}
 const coverY=r=>Number.isFinite(r.coverY)?Math.max(0,Math.min(100,r.coverY)):50;
+
+/* ---------- Filterleiste seitlich ziehen ---------- */
+(()=>{
+  const el=document.getElementById("filters");
+  const edges=()=>{
+    el.classList.toggle("more-left", el.scrollLeft>4);
+    el.classList.toggle("more-right", el.scrollLeft+el.clientWidth<el.scrollWidth-4);
+  };
+  let down=null, moved=false;
+  el.addEventListener("pointerdown",e=>{
+    if(e.pointerType!=="mouse") return;          // mit dem Finger scrollt es von selbst
+    down={x:e.clientX, left:el.scrollLeft}; moved=false;
+  });
+  addEventListener("pointermove",e=>{
+    if(!down) return;
+    const dx=e.clientX-down.x;
+    if(Math.abs(dx)>4){ moved=true; el.classList.add("dragging"); }
+    if(moved) el.scrollLeft=down.left-dx;
+  });
+  addEventListener("pointerup",()=>{ down=null; el.classList.remove("dragging"); });
+  // nach dem Ziehen keinen Filter aus Versehen antippen
+  el.addEventListener("click",e=>{ if(moved){ e.stopPropagation(); e.preventDefault(); moved=false; } },true);
+  // Mausrad scrollt seitlich
+  el.addEventListener("wheel",e=>{
+    if(Math.abs(e.deltaY)>Math.abs(e.deltaX) && el.scrollWidth>el.clientWidth){ el.scrollLeft+=e.deltaY; e.preventDefault(); }
+  },{passive:false});
+  el.addEventListener("scroll",edges,{passive:true});
+  addEventListener("resize",edges);
+  new MutationObserver(edges).observe(el,{childList:true});
+})();
 
 /* ---------- Zustand ---------- */
 let recipes=[], view=null, confirmDel=false, newBlob=null, coverFor=null;
