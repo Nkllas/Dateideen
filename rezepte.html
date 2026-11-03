@@ -261,6 +261,39 @@ header p{margin-top:4px;font-size:.88rem}
 .pagemenu a:hover{background:var(--accent-soft)}
 .pagemenu a[aria-current="page"]{background:var(--accent-soft);font-weight:600}
 .pm-dot{width:10px;height:10px;border-radius:50%;flex:none}
+
+/* Nährwerte */
+.tn{font-variant-numeric:tabular-nums}
+.nutri{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.nutri-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.nutri-head h2{margin:0;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.est-tag{font-size:.75rem;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 8px}
+.nutri-main{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.nutri-main b{font-family:var(--display);font-weight:400;font-size:2.1rem;line-height:1;margin-right:6px}
+.nutri-main span{color:var(--muted);font-size:.85rem}
+.serv{display:flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:2px}
+.serv button{width:30px;height:30px;border:0;border-radius:50%;background:none;font-size:1.1rem;color:var(--accent);font-weight:700}
+.serv button:hover{background:var(--accent-soft)}
+.serv .tn{font-size:.85rem;color:var(--ink)!important;min-width:86px;text-align:center}
+.macros{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.85rem;color:var(--muted)}
+.macros b{color:var(--ink);font-weight:600}
+.nutri-note{margin:0;font-size:.8rem;color:var(--muted)}
+.nutri-msg{margin:0;font-size:.85rem;color:var(--ink)}
+.nutri-msg.err{color:#b4442f}
+.kc{flex:none;align-self:center;border:1px solid var(--line);background:var(--bg);color:var(--muted);border-radius:999px;padding:3px 9px;font-size:.75rem;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
+.kc.set{color:var(--ink);border-color:var(--accent)}
+.kc.open{background:var(--accent-soft);color:var(--ink)}
+.items li.nut-ed{display:flex;flex-direction:column;gap:10px;background:var(--bg);padding:12px}
+.nut-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.nut-grid label{display:flex;flex-direction:column;gap:4px;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.nut-in{display:flex;align-items:center;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:0 8px}
+.nut-in:focus-within{border-color:var(--accent)}
+.nut-in input{flex:1;min-width:0;border:0;background:none;font:inherit;font-size:.95rem;color:var(--ink);padding:7px 0;text-transform:none}
+.nut-in input:focus{outline:none}
+.nut-in small{font-size:.68rem;color:var(--muted);text-transform:none;letter-spacing:0;white-space:nowrap}
+.nut-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.nut-actions .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;font-size:.88rem}
+.nut-actions svg{width:18px;height:18px}
 </style>
 </head>
 <body>
@@ -310,11 +343,12 @@ header p{margin-top:4px;font-size:.88rem}
 
   <div class="status" id="status"></div>
   <input type="file" id="coverInput" accept="image/*" hidden>
+  <input type="file" id="labelInput" accept="image/*" hidden>
   <div class="modal" id="videoModal" hidden>
     <form class="sheet vsheet" id="linkForm" role="dialog" aria-modal="true" aria-labelledby="videoTitle" autocomplete="off">
       <h3 id="videoTitle">Rezept aus Video</h3>
-      <p>Füg einen TikTok- oder YouTube-Link ein. Claude macht daraus ein Rezept mit Zutaten und Schritten.</p>
-      <input id="linkInput" type="url" inputmode="url" placeholder="https://www.tiktok.com/…" aria-label="Link zum Video">
+      <p>Füg einen Link von TikTok, Instagram oder YouTube ein. Claude macht daraus ein Rezept mit Zutaten und Schritten.</p>
+      <input id="linkInput" type="url" inputmode="url" placeholder="Link von TikTok, Instagram oder YouTube" aria-label="Link zum Video">
       <p class="vmsg" id="linkMsg" hidden></p>
       <div class="vrow">
         <button class="ghost" type="button" id="videoCancel">Abbrechen</button>
@@ -909,7 +943,7 @@ function cardHtml(r,showCat){
   return `<button class="card" type="button" data-open="${esc(r.id)}">
     <div class="cover">${u?`<img src="${u}" alt="" style="object-position:50% ${coverY(r)}%">`:LEAF}${starsBadge(r)}</div>
     <div class="card-body">${showCat&&c?`<span class="card-cat">${c.one}</span>`:""}<span class="card-title">${esc(r.title||"Ohne Namen")}</span>
-    <span class="card-meta">${n} Zutaten · ${s} Schritte</span></div></button>`;
+    <span class="card-meta">${n} Zutaten · ${s} Schritte${(()=>{ const t=nutTotals(r); return t.kcal&&!t.missing?` · ${fmtN(t.kcal/servOf(r))} kcal`:""; })()}</span></div></button>`;
 }
 function renderList(){
   const list=[...recipes].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
@@ -937,7 +971,7 @@ function renderList(){
 function renderDetail(r){
   // nicht neu bauen, während jemand gerade in ein Feld tippt
   const a=document.activeElement;
-  if(a && $("#detail").contains(a) && a.matches("[data-ing],[data-step],#rtitle,#cropY")) return;
+  if(a && $("#detail").contains(a) && a.matches("[data-ing],[data-step],[data-nut],#rtitle,#cropY")) return;
   const ing=arr(r.ingredients), steps=arr(r.steps);
   $("#detail").innerHTML=`
     <div class="hero">${heroHtml(r)}${starsBadge(r)}<button class="change" type="button" data-act="cover">${okId(r.cover)?"Bild ändern":"Titelbild hinzufügen"}</button></div>
@@ -949,9 +983,10 @@ function renderDetail(r){
     <div class="cat-row" role="group" aria-label="Kategorie">${CATS.map(c=>`<button type="button" class="chip" data-act="cat" data-cat="${c.id}" aria-pressed="${r.category===c.id}">${c.one}</button>`).join("")}</div>
     ${okId(r.cover)&&photoUrl(r.cover)?`<div class="crop"><div class="crop-prev"><img id="cropPrev" src="${photoUrl(r.cover)}" alt="" style="object-position:50% ${coverY(r)}%"></div>
       <label for="cropY">Ausschnitt für die Kachel<input type="range" id="cropY" min="0" max="100" value="${coverY(r)}"></label></div>`:""}
+    ${nutSummary(r)}
     <div class="sec">
       <h2>Zutaten <span>${ing.length}</span></h2>
-      <ul class="items">${ing.map((t,k)=>`<li><span class="leaf"></span><input id="ing-${k}" data-ing="${k}" value="${esc(t)}" aria-label="Zutat ${k+1}"><button class="x" type="button" data-act="del-ing" data-k="${k}" aria-label="Zutat löschen">×</button></li>`).join("")}</ul>
+      <ul class="items">${ing.map((t,k)=>ingRow(r,t,k)).join("")}</ul>
       <form class="adder" id="addIng" autocomplete="off"><input id="newIng" placeholder="z.B. 200 g rote Linsen" aria-label="Neue Zutat"><button class="btn" type="submit">+</button></form>
     </div>
     <div class="sec">
@@ -961,6 +996,7 @@ function renderDetail(r){
     </div>
     <button class="del${confirmDel?" sure":""}" type="button" data-act="del-recipe">${confirmDel?"Wirklich löschen?":"Rezept löschen"}</button>`;
   $("#detail").querySelectorAll("textarea[data-step],#rtitle").forEach(grow);
+  scheduleEstimate(r);
 }
 const grow=t=>{ t.style.height="auto"; t.style.height=t.scrollHeight+"px"; };
 
@@ -1214,6 +1250,130 @@ $("#matchClose").addEventListener("click",closeMatch);
 $("#matchOpen").addEventListener("click",()=>{ const id=matchShowing; closeMatch(); if(id) openRecipe(id); });
 $("#matchModal").addEventListener("click",e=>{ if(e.target.id==="matchModal") closeMatch(); });
 
+/* ---------- Kalorien und Nährwerte ---------- */
+// pro Zutat: g = Menge in Gramm, kcal/p/c/f = Werte pro 100 g, src = "man" (selbst), "label" (Etikett), "est" (geschätzt)
+const NUT_FIELDS=[["g","Menge","g"],["kcal","Kalorien","kcal / 100 g"],["p","Eiweiß","g / 100 g"],["c","Kohlenhydrate","g / 100 g"],["f","Fett","g / 100 g"]];
+const nutriOf=r=>(r.nutri && typeof r.nutri==="object")?r.nutri:{};
+function nutEntry(r,k){
+  const e=nutriOf(r)[k], text=arr(r.ingredients)[k];
+  if(!e || typeof e!=="object") return null;
+  if(e.src==="est" && e.t!==text) return null;   // Zutat geändert: neu schätzen
+  return e;
+}
+const kcalOf=e=>e?(+e.g||0)*(+e.kcal||0)/100:0;
+const servOf=r=>Number.isInteger(r.servings)&&r.servings>0?r.servings:2;
+function nutTotals(r){
+  const t={kcal:0,p:0,c:0,f:0,est:false,missing:0};
+  arr(r.ingredients).forEach((_,k)=>{ const e=nutEntry(r,k); if(!e){ t.missing++; return; }
+    const g=(+e.g||0)/100; t.kcal+=g*(+e.kcal||0); t.p+=g*(+e.p||0); t.c+=g*(+e.c||0); t.f+=g*(+e.f||0); if(e.src==="est") t.est=true; });
+  return t;
+}
+const fmtN=v=>Math.round(v).toLocaleString("de-DE");
+const numIn=v=>{ const n=parseFloat(String(v).replace(",",".")); return Number.isFinite(n)&&n>=0?Math.round(n*10)/10:0; };
+
+// grobe Schätzung ohne Internet, falls der Helfer nicht erreichbar ist (Werte pro 100 g: kcal, Eiweiß, KH, Fett)
+const FOOD=[["seidentofu",55,5,2,3],["räuchertofu",160,17,2,9],["tofu",120,13,2,7],["tempeh",190,19,9,11],["erdnussbutter",590,25,20,50],["kokosmilch",200,2,3,20],
+  ["hafermilch",45,1,7,1.5],["sojamilch",40,3.5,2,2],["mandelmilch",20,0.5,2,1.1],["sojasahne",180,2,3,18],["sahne",200,2,4,19],["milch",50,3.4,4.8,1.5],
+  ["süßkartoffel",86,1.6,20,0.1],["kartoffel",77,2,17,0.1],["tomatenmark",80,4,13,0.5],["passierte",30,1.5,5,0.2],["tomate",20,1,3.5,0.2],
+  ["paprikapulver",280,14,54,13],["paprika",30,1,6,0.3],["knoblauch",149,6,33,0.5],["zwiebel",40,1.1,9,0.1],["karotte",41,1,10,0.2],["möhre",41,1,10,0.2],
+  ["spinat",23,3,3.6,0.4],["kürbis",30,1,7,0.1],["brokkoli",34,2.8,7,0.4],["zucchini",17,1.2,3,0.3],["champignon",22,3,3,0.3],["pilz",22,3,3,0.3],
+  ["banane",89,1.1,23,0.3],["apfel",52,0.3,14,0.2],["beere",50,1,12,0.3],["avocado",160,2,9,15],["zitrone",29,1,9,0.3],["limette",30,0.7,10,0.2],
+  ["kichererbse",120,7,16,2.5],["bohne",100,7,13,0.5],["linse",340,24,50,1.5],["erbse",80,5,14,0.4],["reis",350,7,78,0.6],["quinoa",370,14,64,6],
+  ["haferflocke",370,13,59,7],["nudel",355,12,72,1.5],["spaghetti",355,12,72,1.5],["pasta",355,12,72,1.5],["mehl",350,10,72,1.5],["brot",250,8,48,3],
+  ["zucker",400,0,100,0],["sirup",310,0,80,0],["honig",310,0,80,0],["agave",310,0,76,0],["schokolade",540,6,55,32],["kakao",230,20,58,14],
+  ["mandel",600,21,20,50],["cashew",580,18,30,44],["walnuss",650,15,14,65],["nuss",600,20,20,50],["tahini",595,17,21,54],["chia",490,17,42,31],["leinsamen",530,18,29,42],
+  ["hefeflocken",360,45,35,5],["hack",200,18,6,11],["käse",350,25,1,27],["joghurt",60,4,5,2],["butter",717,0.5,0.5,81],["margarine",720,0.2,0.5,80],
+  ["öl",884,0,0,100],["ajvar",90,1.5,9,5],["senf",70,4,5,4],["ketchup",110,1.5,25,0.2],["sojasoße",60,8,6,0],["sojasauce",60,8,6,0],["essig",20,0,1,0],
+  ["brühe",5,0.3,0.5,0.2],["wasser",0,0,0,0],["saft",45,0.5,10,0.1],["wein",85,0,3,0],["ei",155,13,1,11]];
+const SPICE=/salz|pfeffer|zimt|muskat|curry|kurkuma|kreuzkümmel|salbei|thymian|rosmarin|oregano|basilikum|petersilie|koriander|chili|gewürz|vanille/;
+const PIECE=[["knolle",40],["kürbis",1000],["blumenkohl",600],["gurke",400],["aubergine",300],["zucchini",250],["ei",60],["zwiebel",80],["kartoffel",150],["tomate",100],["banane",120],["apfel",150],["avocado",150],["karotte",80],["möhre",80],["paprika",160],["zitrone",80],["limette",60],["zehe",4],["knoblauch",4]];
+function localEst(text){
+  const t=String(text).toLowerCase();
+  const food=FOOD.find(f=>t.includes(f[0]));
+  const m=t.match(/(\d+(?:[.,]\d+)?(?:\s*\/\s*\d+)?)\s*(kg|g|gramm|ml|l|liter|el|tl|dosen?|pck\.?|packung(?:en)?|becher|stück|stk\.?|prisen?|bund|zehen?|tassen?|handvoll)?\b/);
+  let g;
+  if(m){
+    const q=m[1].includes("/")?m[1].split("/").map(x=>parseFloat(x.replace(",","."))).reduce((a,b)=>a/b):parseFloat(m[1].replace(",","."));
+    const u=(m[2]||"").replace(/\.$/,"");
+    const per={kg:1000,g:1,gramm:1,ml:1,l:1000,liter:1000,el:food&&food[0]==="öl"?10:12,tl:5,dose:400,dosen:400,pck:200,packung:200,packungen:200,becher:200,prise:1,prisen:1,bund:50,zehe:4,zehen:4,tasse:150,tassen:150,handvoll:30};
+    g=q*(per[u]|| (PIECE.find(p=>t.includes(p[0]))||[0,100])[1]);
+  }else g=SPICE.test(t)?3:/etwas|schuss|spritzer/.test(t)?5:50;
+  const v=food||(SPICE.test(t)?["",250,10,40,5]:["",150,5,20,5]);
+  return {g:Math.round(g),kcal:v[1],p:v[2],c:v[3],f:v[4]};
+}
+
+let nutOpen=null, labelFor=null, estTimer=null;
+const estimating=new Set();
+function scheduleEstimate(r){ clearTimeout(estTimer); estTimer=setTimeout(()=>ensureEstimates(r.id),700); }
+async function ensureEstimates(id){
+  const r=recipes.find(x=>x.id===id); if(!r || !root || estimating.has(id)) return;
+  const ing=arr(r.ingredients), miss=ing.map((t,k)=>[t,k]).filter(([t,k])=>t.trim() && !nutEntry(r,k));
+  if(!miss.length) return;
+  estimating.add(id);
+  let res=null;
+  if(WORKER_URL){
+    try{
+      const resp=await fetch(WORKER_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:"nutrition",items:miss.map(x=>x[0])})});
+      const d=await resp.json(); if(resp.ok && Array.isArray(d.items)) res=d.items.map(x=>({g:x.grams,kcal:x.kcal,p:x.protein,c:x.carbs,f:x.fat}));
+    }catch(e){}
+  }
+  if(!res) res=miss.map(([t])=>localEst(t));
+  const cur=recipes.find(x=>x.id===id); estimating.delete(id); if(!cur) return;
+  const nutri={...nutriOf(cur)};
+  miss.forEach(([t,k],i)=>{ if(arr(cur.ingredients)[k]===t && !nutEntry(cur,k)) nutri[k]={...res[i],src:"est",t}; });
+  cur.nutri=nutri; patch(id,{nutri}); render();
+}
+function nutSummary(r){
+  const ing=arr(r.ingredients); if(!ing.length) return "";
+  const t=nutTotals(r), s=servOf(r);
+  return `<div class="nutri">
+    <div class="nutri-head"><h2>Nährwerte</h2>${t.est?`<span class="est-tag" title="Mindestens ein Wert ist geschätzt">≈ teils geschätzt</span>`:""}</div>
+    <div class="nutri-main"><div><b class="tn">${fmtN(t.kcal/s)}</b><span>kcal pro Portion</span></div>
+      <div class="serv" role="group" aria-label="Portionen"><button type="button" data-act="serv" data-d="-1" aria-label="Eine Portion weniger">−</button>
+        <span class="tn">${s} ${s===1?"Portion":"Portionen"}</span><button type="button" data-act="serv" data-d="1" aria-label="Eine Portion mehr">+</button></div></div>
+    <div class="macros"><span><b class="tn">${fmtN(t.kcal)}</b> kcal gesamt</span><span><b class="tn">${fmtN(t.p/s)} g</b> Eiweiß</span><span><b class="tn">${fmtN(t.c/s)} g</b> Kohlenhydrate</span><span><b class="tn">${fmtN(t.f/s)} g</b> Fett</span></div>
+    ${t.missing?`<p class="nutri-note">${t.missing} ${t.missing===1?"Zutat wird":"Zutaten werden"} gerade geschätzt …</p>`:`<p class="nutri-note">Tipp auf die Kalorien neben einer Zutat, um Menge und Werte selbst einzutragen oder ein Foto vom Etikett zu machen.</p>`}
+  </div>`;
+}
+function ingRow(r,t,k){
+  const e=nutEntry(r,k), open=nutOpen===k;
+  const badge=e?`${e.src==="est"?"≈ ":""}${fmtN(kcalOf(e))} kcal`:"…";
+  let h=`<li><span class="leaf"></span><input id="ing-${k}" data-ing="${k}" value="${esc(t)}" aria-label="Zutat ${k+1}">
+    <button class="kc${e&&e.src!=="est"?" set":""}${open?" open":""}" type="button" data-act="nut" data-k="${k}" aria-expanded="${open}" aria-label="Nährwerte für ${esc(t)}">${badge}</button>
+    <button class="x" type="button" data-act="del-ing" data-k="${k}" aria-label="Zutat löschen">×</button></li>`;
+  if(open){
+    const v=e||{};
+    h+=`<li class="nut-ed">
+      <div class="nut-grid">${NUT_FIELDS.map(([f,l,u])=>`<label>${l}<span class="nut-in"><input inputmode="decimal" data-nut="${f}" data-k="${k}" value="${v[f]!=null&&v[f]!==""?String(v[f]).replace(".",","):""}" placeholder="–"><small>${u}</small></span></label>`).join("")}</div>
+      <p class="nutri-note">${!e?"Wird gerade geschätzt …":e.src==="est"?"Geschätzt. Trag eigene Werte ein, dann zählen die.":e.src==="label"?"Vom Etikett abgelesen. Prüf noch die Menge in Gramm.":"Selbst eingetragen."} Das ergibt <b>${fmtN(kcalOf(e))} kcal</b> für diese Zutat.</p>
+      <p class="nutri-msg" id="nutMsg" hidden></p>
+      <div class="nut-actions"><button class="btn" type="button" data-act="nut-photo" data-k="${k}">${CAM} Etikett fotografieren</button>
+        <button class="ghost" type="button" data-act="nut-est" data-k="${k}">Neu schätzen</button></div>
+    </li>`;
+  }
+  return h;
+}
+const CAM='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>';
+function setNutMsg(t,err){ const m=$("#nutMsg"); if(!m) return; m.textContent=t||""; m.hidden=!t; m.classList.toggle("err",!!err); }
+$("#labelInput").addEventListener("change",async e=>{
+  const f=e.target.files[0]; e.target.value=""; const r=cur(); const k=labelFor; if(!f||!r||k==null) return;
+  if(!WORKER_URL){ setNutMsg("In dieser Vorschau kann das Etikett nicht gelesen werden. Auf deiner echten Seite schon.",true); return; }
+  setNutMsg("Claude liest das Etikett …");
+  try{
+    const bmp=await createImageBitmap(f), s=Math.min(1,1400/Math.max(bmp.width,bmp.height)), c=document.createElement("canvas");
+    c.width=Math.round(bmp.width*s); c.height=Math.round(bmp.height*s); c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);
+    const image=c.toDataURL("image/jpeg",.85), text=arr(r.ingredients)[k]||"";
+    const resp=await fetch(WORKER_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:"label",image,name:text})});
+    const d=await resp.json().catch(()=>({}));
+    if(!resp.ok) throw new Error(d.error||"Der Rezept-Helfer hat nicht geantwortet.");
+    if(!d.found){ setNutMsg("Auf dem Foto war keine Nährwerttabelle zu erkennen. Fotografier die Tabelle möglichst gerade und scharf.",true); return; }
+    const old=nutEntry(r,k)||{}, nutri={...nutriOf(r)};
+    nutri[k]={g:old.g||localEst(text).g,kcal:d.kcal,p:d.protein,c:d.carbs,f:d.fat,src:"label",t:text};
+    r.nutri=nutri; patch(r.id,{nutri}); render();
+    setNutMsg(`Abgelesen: ${fmtN(d.kcal)} kcal, ${d.protein} g Eiweiß, ${d.carbs} g Kohlenhydrate, ${d.fat} g Fett pro 100 g.`);
+  }catch(err){ setNutMsg(err instanceof TypeError?"Keine Verbindung zum Rezept-Helfer.":err.message,true); }
+});
+
 /* ---------- Detail bearbeiten ---------- */
 document.addEventListener("click",e=>{
   const o=e.target.closest("[data-open]"); if(o){ openRecipe(o.dataset.open); return; }
@@ -1227,7 +1387,15 @@ document.addEventListener("click",e=>{
   if(b.dataset.act==="cat"){ r.category=r.category===b.dataset.cat?null:b.dataset.cat; patch(r.id,{category:r.category}); render(); return; }
   const act=b.dataset.act, k=+b.dataset.k;
   if(act==="cover"){ coverFor=r.id; $("#coverInput").click(); }
-  if(act==="del-ing"){ r.ingredients=arr(r.ingredients).filter((_,i)=>i!==k); patch(r.id,{ingredients:r.ingredients}); render(); }
+  if(act==="del-ing"){
+    const old=nutriOf(r), nutri={};
+    arr(r.ingredients).forEach((_,i)=>{ if(i<k && old[i]) nutri[i]=old[i]; if(i>k && old[i]) nutri[i-1]=old[i]; });
+    r.ingredients=arr(r.ingredients).filter((_,i)=>i!==k); r.nutri=nutri; nutOpen=null;
+    patch(r.id,{ingredients:r.ingredients,nutri}); render(); }
+  if(act==="nut"){ nutOpen=nutOpen===k?null:k; render(); }
+  if(act==="nut-photo"){ labelFor=k; $("#labelInput").click(); }
+  if(act==="nut-est"){ const nutri={...nutriOf(r)}; delete nutri[k]; r.nutri=nutri; patch(r.id,{nutri}); render(); ensureEstimates(r.id); }
+  if(act==="serv"){ r.servings=Math.max(1,Math.min(20,servOf(r)+(+b.dataset.d))); patch(r.id,{servings:r.servings}); render(); }
   if(act==="del-step"){ r.steps=arr(r.steps).filter((_,i)=>i!==k); patch(r.id,{steps:r.steps}); render(); }
   if(act==="del-recipe"){
     if(!confirmDel){ confirmDel=true; render(); return; }
@@ -1263,12 +1431,16 @@ document.addEventListener("input",e=>{
   if(t.id==="cropY"){ r.coverY=+t.value; $("#cropPrev").style.objectPosition=`50% ${r.coverY}%`; field="coverY"; }
   else if(t.id==="rtitle"){ r.title=t.value; field="title"; }
   else if(t.dataset.ing){ const a=arr(r.ingredients); a[+t.dataset.ing]=t.value; r.ingredients=a; field="ingredients"; }
+  else if(t.dataset.nut){
+    const k=+t.dataset.k, text=arr(r.ingredients)[k]||"", nutri={...nutriOf(r)}, e={...(nutEntry(r,k)||localEst(text))};
+    e[t.dataset.nut]=numIn(t.value); e.src="man"; e.t=text; nutri[k]=e; r.nutri=nutri; field="nutri";
+  }
   else if(t.dataset.step){ const a=arr(r.steps); a[+t.dataset.step]=t.value; r.steps=a; field="steps"; }
   if(!field) return;
   clearTimeout(timers[field]);
   timers[field]=setTimeout(()=>patch(r.id,{[field]:r[field]}),500);
 });
-document.addEventListener("focusout",e=>{ if(e.target.matches("[data-ing],[data-step],#rtitle,#cropY")) setTimeout(render,600); });
+document.addEventListener("focusout",e=>{ if(e.target.matches("[data-ing],[data-step],[data-nut],#rtitle,#cropY")) setTimeout(render,600); });
 
 /* ---------- Start ---------- */
 Auth.start(firebaseConfig,"recipes",r=>{
