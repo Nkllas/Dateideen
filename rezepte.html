@@ -304,6 +304,20 @@ header p{margin-top:4px;font-size:.88rem}
 .kswitch input:checked + .track::after{transform:translateX(16px)}
 .kswitch input:focus-visible + .track{outline:2px solid var(--accent);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.kswitch .track,.kswitch .track::after{transition:none}}
+
+/* Kategorien als einklappbare Abschnitte */
+#grid{display:flex;flex-direction:column;gap:12px}
+.cat-sec{display:flex;flex-direction:column;gap:10px}
+.cat-fold{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid var(--line);border-radius:14px;padding:9px 12px;
+  background:linear-gradient(100deg,var(--accent-soft),var(--surface));color:var(--ink);cursor:pointer}
+.cat-fold:hover{border-color:var(--accent)}
+.cat-emo{font-size:1.45rem;line-height:1;width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.cat-name{flex:1;font-family:var(--display);font-size:1.3rem;line-height:1.1}
+.cat-n{min-width:26px;padding:1px 8px;border-radius:999px;background:var(--surface);font-size:.8rem;font-weight:600;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums}
+.cat-fold svg{width:20px;height:20px;color:var(--muted);transition:transform .2s}
+.cat-sec.shut .cat-fold svg{transform:rotate(-90deg)}
+.cat-sec.shut .cat-fold{background:var(--surface)}
+@media (prefers-reduced-motion:reduce){.cat-fold svg{transition:none}}
 </style>
 </head>
 <body>
@@ -853,16 +867,18 @@ function heroHtml(r){
 const coverHtml=(id,cls)=>{ const u=okId(id)&&photoUrl(id); return u?`<img src="${u}" alt="">`:LEAF; };
 
 /* ---------- Kategorien ---------- */
+// Reihenfolge wie ein Menü: Vorspeise, Hauptspeise, Nachspeise, dann Snacks und Gebackenes
 const CATS=[
-  {id:"haupt", label:"Hauptgerichte", one:"Hauptgericht"},
-  {id:"vor",   label:"Vorspeisen",    one:"Vorspeise"},
-  {id:"suess", label:"Süßes",         one:"Süßes"},
-  {id:"backen",label:"Backen",        one:"Backen"},
-  {id:"snack", label:"Kleine Snacks", one:"Snack"},
+  {id:"vor",   label:"Vorspeisen",   one:"Vorspeise",   emoji:"🥗", alias:[]},
+  {id:"haupt", label:"Hauptspeisen", one:"Hauptspeise", emoji:"🍝", alias:["Hauptgericht","Hauptgerichte"]},
+  {id:"suess", label:"Nachspeisen",  one:"Nachspeise",  emoji:"🍰", alias:["Süßes","Dessert"]},
+  {id:"snack", label:"Snacks",       one:"Snack",       emoji:"🥨", alias:["Kleine Snacks"]},
+  {id:"backen",label:"Backen",       one:"Backen",      emoji:"🥐", alias:[]},
 ];
 const catOf=r=>CATS.find(c=>c.id===r.category);
 // Der Helfer antwortet mit dem deutschen Namen, z.B. "Hauptgericht"
-const catFromLabel=t=>{ const c=CATS.find(c=>c.one===t||c.label===t||c.id===t); return c?c.id:null; };
+const catFromLabel=t=>{ const c=CATS.find(c=>c.one===t||c.label===t||c.id===t||c.alias.includes(t)); return c?c.id:null; };
+let folded=new Set(); try{ folded=new Set(JSON.parse(localStorage.getItem("rezepte.folded")||"[]")); }catch(e){}
 let filter="alle", newCat=null;
 try{ const f=localStorage.getItem("rezepte.filter"); if(f) filter=f; }catch(e){}
 const coverY=r=>Number.isFinite(r.coverY)?Math.max(0,Math.min(100,r.coverY)):50;
@@ -959,23 +975,29 @@ function cardHtml(r,showCat){
 function renderList(){
   const list=[...recipes].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
   const groups=[...CATS.map(c=>({...c,items:list.filter(r=>r.category===c.id)})),
-                {id:"ohne",label:"Noch ohne Kategorie",items:list.filter(r=>!catOf(r))}];
+                {id:"ohne",label:"Noch ohne Kategorie",emoji:"🗂️",items:list.filter(r=>!catOf(r))}];
   if(filter!=="alle" && !groups.some(g=>g.id===filter)) filter="alle";
   const chips=[{id:"alle",label:"Alle",items:list},...groups.filter(g=>g.id!=="ohne"||g.items.length)];
   $("#filters").hidden=list.length===0 || !filtersOpen;
   const active=chips.find(g=>g.id===filter);
-  $("#filterLabel").textContent = filter==="alle" ? "Filter" : active.label;
+  $("#filterLabel").textContent = filter==="alle" ? "Filter" : `${active.emoji} ${active.label}`;
   $("#filterBtn").classList.toggle("active", filter!=="alle");
   $("#filterBtn").setAttribute("aria-expanded", filtersOpen);
   $("#filterBtn").hidden = list.length===0;
-  $("#filters").innerHTML=chips.map(g=>`<button type="button" class="chip" data-filter="${g.id}" aria-pressed="${filter===g.id}">${g.label}<span class="n">${g.items.length}</span></button>`).join("");
+  $("#filters").innerHTML=chips.map(g=>`<button type="button" class="chip" data-filter="${g.id}" aria-pressed="${filter===g.id}">${g.emoji?g.emoji+" ":""}${g.label}<span class="n">${g.items.length}</span></button>`).join("");
   $("#empty").hidden=list.length>0;
   if(filter==="alle"){
-    $("#grid").innerHTML=groups.filter(g=>g.items.length).map(g=>
-      `<h3 class="cat-head">${g.label}<span>${g.items.length}</span></h3>`+g.items.map(r=>cardHtml(r,false)).join("")).join("");
+    $("#grid").innerHTML=groups.filter(g=>g.items.length).map(g=>{ const shut=folded.has(g.id);
+      return `<section class="cat-sec${shut?" shut":""}">
+        <button type="button" class="cat-fold" data-fold="${g.id}" aria-expanded="${!shut}">
+          <span class="cat-emo" aria-hidden="true">${g.emoji}</span><span class="cat-name">${g.label}</span><span class="cat-n">${g.items.length}</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        ${shut?"":`<div class="grid">${g.items.map(r=>cardHtml(r,false)).join("")}</div>`}
+      </section>`; }).join("");
   }else{
     const g=groups.find(g=>g.id===filter);
-    $("#grid").innerHTML=g.items.length?g.items.map(r=>cardHtml(r,false)).join("")
+    $("#grid").innerHTML=g.items.length?`<div class="grid">${g.items.map(r=>cardHtml(r,false)).join("")}</div>`
       :`<p class="card-meta" style="grid-column:1/-1">Noch keine ${g.label}.</p>`;
   }
 }
@@ -991,7 +1013,7 @@ function renderDetail(r){
     <div class="star-row" role="group" aria-label="Sterne vergeben">${[1,2,3,4,5].map(i=>
       `<button type="button" class="star-btn" data-act="stars" data-v="${i}" aria-label="${i} ${i===1?"Stern":"Sterne"}" aria-pressed="${starsOf(r)===i}">${starSvg(i<=starsOf(r),"var(--muted)")}</button>`).join("")}
       <span class="hint">${starsOf(r)?`${starsOf(r)} von 5`:"Noch keine Sterne"}</span></div>
-    <div class="cat-row" role="group" aria-label="Kategorie">${CATS.map(c=>`<button type="button" class="chip" data-act="cat" data-cat="${c.id}" aria-pressed="${r.category===c.id}">${c.one}</button>`).join("")}</div>
+    <div class="cat-row" role="group" aria-label="Kategorie">${CATS.map(c=>`<button type="button" class="chip" data-act="cat" data-cat="${c.id}" aria-pressed="${r.category===c.id}">${c.emoji} ${c.one}</button>`).join("")}</div>
     ${okId(r.cover)&&photoUrl(r.cover)?`<div class="crop"><div class="crop-prev"><img id="cropPrev" src="${photoUrl(r.cover)}" alt="" style="object-position:50% ${coverY(r)}%"></div>
       <label for="cropY">Ausschnitt für die Kachel<input type="range" id="cropY" min="0" max="100" value="${coverY(r)}"></label></div>`:""}
     ${nutSummary(r)}
@@ -1019,7 +1041,7 @@ $("#back").addEventListener("click",()=>{ if(history.state&&history.state.r) his
 /* ---------- Neues Rezept ---------- */
 $("#newBtn").addEventListener("click",()=>{ $("#newForm").hidden=false; $("#newBar").hidden=true; $("#newName").focus(); });
 function renderNewCats(){
-  $("#newCats").innerHTML=CATS.map(c=>`<button type="button" class="chip" data-newcat="${c.id}" aria-pressed="${newCat===c.id}">${c.one}</button>`).join("");
+  $("#newCats").innerHTML=CATS.map(c=>`<button type="button" class="chip" data-newcat="${c.id}" aria-pressed="${newCat===c.id}">${c.emoji} ${c.one}</button>`).join("");
 }
 renderNewCats();
 function resetNew(){
@@ -1399,6 +1421,9 @@ $("#labelInput").addEventListener("change",async e=>{
 /* ---------- Detail bearbeiten ---------- */
 document.addEventListener("click",e=>{
   const o=e.target.closest("[data-open]"); if(o){ openRecipe(o.dataset.open); return; }
+  const fd=e.target.closest("[data-fold]");
+  if(fd){ const id=fd.dataset.fold; folded.has(id)?folded.delete(id):folded.add(id);
+    try{ localStorage.setItem("rezepte.folded",JSON.stringify([...folded])); }catch(err){}; renderList(); return; }
   const f=e.target.closest("[data-filter]");
   if(f){ filter=f.dataset.filter; try{localStorage.setItem("rezepte.filter",filter)}catch(err){}; renderList(); return; }
   const nc=e.target.closest("[data-newcat]");
