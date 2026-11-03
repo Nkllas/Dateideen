@@ -292,15 +292,6 @@ body{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/20
   </div>
 </div>
 
-<div class="modal" id="membersModal" hidden>
-  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="memTitle">
-    <h3 id="memTitle">Mitbewohner</h3>
-    <p id="memHint"></p>
-    <ul class="memlist" id="memList"></ul>
-    <button class="chip plus wide" type="button" id="memAdd">+ Person hinzufügen</button>
-    <button class="btn primary" type="button" id="memDone">Fertig</button>
-  </div>
-</div>
 <div class="toast" id="toast" hidden><span id="toastText"></span><button type="button" id="toastUndo">Rückgängig</button></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -760,7 +751,7 @@ const SUGGEST=[["Staubsaugen","Wohnen",7],["Bad putzen","Bad",7],["Müll rausbri
 const CHECK='<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 7.5l2.6 2.6L11 4.5" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
 let chores=[], log={}, members={}, membersLoaded=false, customRooms={}, show="all", openId=null, confirmId=null;
-let addingRoom=null, confirmMember=null, pendingDone=null;
+let addingRoom=null;
 let me=null;          // wird nach der Anmeldung auf das eigene Konto gesetzt
 let legacyMap={};     // alte Mitbewohner-Einträge (a, b, …) → Konto mit gleichem Namen
 try{ if(localStorage.getItem("haushalt.show")==="mine") show="mine"; }catch(e){}
@@ -1000,45 +991,8 @@ function hideToast(){ $("#toast").hidden=true; toastUndo=null; }
 $("#toastUndo").addEventListener("click",()=>{ if(toastUndo) toastUndo(); });
 
 /* ---------- Mitbewohner ---------- */
-function openMembers(asking){
-  $("#memTitle").textContent=asking?"Wer bist du?":"Mitbewohner";
-  $("#memHint").textContent=asking?"Tipp bei deinem Namen auf „Das bin ich“. Das Handy merkt sich das."
-    :"Namen ändern, Mitbewohner hinzufügen oder entfernen. Bei dir selbst „Das bin ich“ wählen.";
-  confirmMember=null; renderMembers(); $("#membersModal").hidden=false;
-}
-function renderMembers(){
-  const a=document.activeElement; if(a && $("#memList").contains(a) && a.matches("input")) return;
-  const ms=memberList();
-  $("#memList").innerHTML=ms.map(m=>`<li>
-      <span class="dot big" style="background:${m.color}"></span>
-      <input type="text" data-mname="${esc(m.id)}" value="${esc(m.name||"")}" maxlength="20" placeholder="Name" aria-label="Name">
-      <button type="button" class="chip${me===m.id?" mine":""}" data-iam="${esc(m.id)}" aria-pressed="${me===m.id}">${me===m.id?"Das bin ich ✓":"Das bin ich"}</button>
-      <button type="button" class="chip-x big${confirmMember===m.id?" sure":""}" data-mdel="${esc(m.id)}" aria-label="${esc(m.name||"Person")} entfernen"${ms.length<=1?" disabled":""}>${confirmMember===m.id?"Löschen?":"×"}</button>
-    </li>`).join("");
-}
-function closeMembers(){
-  $("#membersModal").hidden=true; confirmMember=null;
-  const c=chores.find(x=>x.id===pendingDone); pendingDone=null;
-  if(c && meValid()) markDone(c); else render();
-}
 // Personen kommen aus den Konten, die dem Haushalt beigetreten sind; der Knopf öffnet das Einladen
 $("#membersBtn").addEventListener("click",()=>{ const b=document.querySelector('[data-pf="people"]'); if(b) b.click(); });
-$("#memDone").addEventListener("click",closeMembers);
-$("#membersModal").addEventListener("click",e=>{ if(e.target.id==="membersModal") closeMembers(); });
-$("#memAdd").addEventListener("click",()=>{
-  const ms=memberList(), id="m"+Date.now().toString(36);
-  const used=new Set(ms.map(m=>m.color)), color=COLORS.find(c=>!used.has(c))||COLORS[ms.length%COLORS.length];
-  members[id]={name:"",color,order:(ms.length?Math.max(...ms.map(m=>m.order||0)):0)+1};
-  root.child("members/"+id).set(members[id]).catch(showErr);
-  renderMembers(); const inp=document.querySelector(`[data-mname="${id}"]`); if(inp) inp.focus();
-});
-function ensureMembers(peopleVal){
-  // beim ersten Mal die beiden Namen vom Swipen übernehmen
-  if(!root || Object.keys(members).length) return;
-  const p=peopleVal||{};
-  members={a:{name:p.a||"",color:COLORS[0],order:0},b:{name:p.b||"",color:COLORS[1],order:1}};
-  root.child("members").set(members).catch(showErr);
-}
 
 /* ---------- Klicks und Eingaben ---------- */
 function setField(ctx,key,val){
@@ -1077,13 +1031,6 @@ document.addEventListener("click",e=>{
     let next = id==="all" ? [] : cur.includes(id) ? cur.filter(x=>x!==id) : [...cur,id];
     if(ctx==="new") setField(ctx,"who",next); else setField(ctx,"who",next.length?next:"all");
     return; }
-  const im=t.closest("[data-iam]"); if(im){ me=im.dataset.iam; try{ localStorage.setItem("haushalt.me",me); }catch(err){} renderMembers(); if(pendingDone) closeMembers(); return; }
-  const md=t.closest("[data-mdel]"); if(md){
-    const id=md.dataset.mdel; if(memberList().length<=1) return;
-    if(confirmMember!==id){ confirmMember=id; renderMembers(); return; }
-    delete members[id]; confirmMember=null; root.child("members/"+id).remove().catch(showErr);
-    if(me===id){ me=null; try{ localStorage.removeItem("haushalt.me"); }catch(err){} }
-    renderMembers(); return; }
   const b=t.closest("[data-act]"); if(!b) return;
   const li=b.closest("li"); const c=li&&chores.find(x=>x.id===li.dataset.id); if(!c) return;
   const act=b.dataset.act;
@@ -1113,13 +1060,6 @@ function customEvery(ctx){
 document.addEventListener("input",e=>{
   const t=e.target;
   if(t.dataset.evnum!==undefined){ customEvery(t.dataset.evnum); return; }
-  if(t.dataset.mname!==undefined){
-    const id=t.dataset.mname, v=t.value.slice(0,20); if(members[id]) members[id].name=v;
-    clearTimeout(timers["m"+id]); timers["m"+id]=setTimeout(()=>{
-      root.child("members/"+id+"/name").set(v.trim()).catch(showErr);
-      if(id==="a"||id==="b") root.child("people/"+id).set(v.trim()).catch(()=>{});   // gleiche Namen beim Rezepte-Swipen
-    },500);
-    return; }
   const li=t.closest("li"); if(!li||!t.dataset.field) return;
   const c=chores.find(x=>x.id===li.dataset.id); if(!c) return;
   const val=t.value.slice(0,80); c.title=val;
@@ -1130,7 +1070,6 @@ document.addEventListener("focusout",e=>{
   const t=e.target;
   if(t.closest("#list") && (t.dataset.field||t.dataset.evnum!==undefined)) setTimeout(render,600);
   if(t.closest("#newForm") && t.dataset.evnum!==undefined) setTimeout(renderNew,300);
-  if(t.dataset.mname!==undefined) setTimeout(()=>{ if(!$("#membersModal").hidden) renderMembers(); },600);
 });
 
 // Beim Runterscrollen schiebt sich der helle Bereich über den Kopf
