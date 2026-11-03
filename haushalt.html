@@ -190,6 +190,50 @@ body{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/20
 
 .toast{width:min(440px,calc(100% - 32px));justify-content:space-between;border-radius:16px;line-height:1.35}
 .toast button{flex:none}
+
+/* Wochenplan */
+.toggle.view button{display:grid;place-items:center;padding:5px 9px}
+.toggle.view svg{width:17px;height:17px}
+.topbar .toggle.view{margin-left:auto}
+.topbar .toggle.view + .toggle{margin-left:0}
+.wk-head{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px}
+.wk-head div{display:flex;flex-direction:column;align-items:center}
+.wk-head b{font-family:var(--display);font-weight:400;font-size:1.25rem;line-height:1.1}
+.wk-head small{font-size:.78rem;color:var(--muted)}
+.wk-nav{width:36px;height:36px;border:0;border-radius:9px;background:none;font-size:1.4rem;line-height:1;color:var(--accent)}
+.wk-nav:hover{background:var(--accent-soft)}
+.week{display:grid;grid-template-columns:1fr;gap:8px}
+.wk-day{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.wk-day.today{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+.wk-day.past{opacity:.72}
+.wk-day h4{margin:0;display:flex;align-items:baseline;gap:6px;font-size:.8rem;color:var(--muted);font-weight:500}
+.wk-day h4 span{font-weight:700;color:var(--ink);font-size:.9rem}
+.wk-day.today h4 span{color:var(--accent)}
+.wk-day ul{gap:4px}
+.wk-item{display:flex;align-items:center;gap:8px;padding:4px 0}
+.wk-item .whos .who,.wk-item .who{width:22px;height:22px;font-size:.65rem}
+.wk-item .who-all{font-size:.65rem;padding:1px 6px}
+.check.small{width:22px;height:22px;border-width:2px}
+.check.small svg{width:12px;height:12px}
+.wk-main{flex:1;min-width:0;text-align:left;background:none;border:0;padding:0;display:flex;flex-direction:column}
+.wk-main b{font-weight:600;font-size:.88rem;overflow-wrap:anywhere}
+.wk-main small{font-size:.72rem;color:var(--muted)}
+.wk-item.late .wk-main small{color:var(--late);font-weight:600}
+.wk-item.done .wk-main b{text-decoration:line-through;color:var(--muted)}
+.wk-free{margin:0;font-size:.78rem;color:var(--muted)}
+@media (min-width:600px){
+  .week{grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+  .wk-day{padding:8px 6px;min-height:140px}
+  .wk-day h4{flex-direction:column;align-items:flex-start;gap:0}
+  .wk-item{flex-wrap:wrap;gap:4px}
+  .wk-item .whos,.wk-item .who-all,.wk-item > .who{display:none}
+}
+
+@media (min-width:600px){
+  body.weekview .wrap,body.weekview .board{max-width:940px}
+  .wk-item{flex-direction:column;align-items:flex-start;gap:3px}
+  .wk-main b{hyphens:auto;-webkit-hyphens:auto;overflow-wrap:normal;word-break:normal}
+}
 </style>
 </head>
 <body>
@@ -203,7 +247,11 @@ body{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/20
   <section class="panel">
     <div class="topbar" id="topbar">
       <button class="btn primary" id="newBtn" type="button">+ Aufgabe</button>
-      <button class="btn people" id="membersBtn" type="button" aria-label="Mitbewohner bearbeiten"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="16.5" cy="9" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M15.5 14.2c2.6-.3 4.5 1.3 5 4.3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span id="membersLabel">2</span></button>
+      <button class="btn people" id="membersBtn" type="button" aria-label="Mitbewohner einladen" title="Mitbewohner einladen"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="16.5" cy="9" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M15.5 14.2c2.6-.3 4.5 1.3 5 4.3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span id="membersLabel">2</span></button>
+      <div class="toggle view" role="group" aria-label="Ansicht">
+        <button type="button" data-view="list" aria-pressed="true" aria-label="Liste" title="Liste"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+        <button type="button" data-view="week" aria-pressed="false" aria-label="Wochenplan" title="Wochenplan"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+      </div>
       <div class="toggle" role="group" aria-label="Welche Aufgaben">
         <button type="button" data-show="all" aria-pressed="true">Alle</button>
         <button type="button" data-show="mine" aria-pressed="false">Meine</button>
@@ -713,18 +761,20 @@ const CHECK='<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 7.5l2.6 2.6
 
 let chores=[], log={}, members={}, membersLoaded=false, customRooms={}, show="all", openId=null, confirmId=null;
 let addingRoom=null, confirmMember=null, pendingDone=null;
-let me=null; try{ me=localStorage.getItem("haushalt.me")||localStorage.getItem("rezepte.me"); }catch(e){}
+let me=null;          // wird nach der Anmeldung auf das eigene Konto gesetzt
+let legacyMap={};     // alte Mitbewohner-Einträge (a, b, …) → Konto mit gleichem Namen
 try{ if(localStorage.getItem("haushalt.show")==="mine") show="mine"; }catch(e){}
 
 const memberList=()=>Object.entries(members).map(([id,m])=>({id,...m})).sort((x,y)=>(x.order||0)-(y.order||0));
-const nameOf=id=>(members[id]&&members[id].name||"").trim()||"Jemand";
-const colorOf=id=>(members[id]&&members[id].color)||"#8a99a3";
+const R=id=>legacyMap[id]||id;
+const nameOf=id=>(members[R(id)]&&members[R(id)].name||"").trim()||"Jemand";
+const colorOf=id=>(members[R(id)]&&members[R(id)].color)||"#8a99a3";
 const initialOf=id=>nameOf(id).slice(0,1).toUpperCase();
 const meValid=()=>me && members[me];
 // Wer ist zuständig? leer heißt alle
 function whoList(c){
-  if(Array.isArray(c.who)) return c.who.filter(id=>members[id]);
-  if(c.who==="a"||c.who==="b") return members[c.who]?[c.who]:[];
+  if(Array.isArray(c.who)) return [...new Set(c.who.map(R))].filter(id=>members[id]);
+  if(c.who==="a"||c.who==="b") return members[R(c.who)]?[R(c.who)]:[];
   return [];
 }
 const roomList=()=>[...ROOMS, ...Object.values(customRooms).filter(r=>!ROOMS.includes(r))];
@@ -777,10 +827,48 @@ function render(){
       <div class="chips">${SUGGEST.map((s,i)=>`<button type="button" class="chip" data-suggest="${i}">+ ${s[0]}</button>`).join("")}</div></div>`;
     return;
   }
+  document.querySelectorAll("[data-view]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.view===view));
+  document.body.classList.toggle("weekview",view==="week");
+  if(view==="week"){ list.innerHTML=weekHtml(visible); return; }
   if(!visible.length){ list.innerHTML=`<p class="allgood">Für dich gibt es gerade keine eigenen Aufgaben.</p>`; return; }
   const sec=(title,items,note)=>items.length?`<h3 class="sec-head">${title}<span>${items.length}</span></h3><ul>${items.map(itemHtml).join("")}</ul>`:(note||"");
   list.innerHTML=sec("Fällig",due,`<p class="allgood">Nichts fällig. Alles erledigt.</p>`)+sec("Diese Woche",week)+sec("Später",later);
 }
+/* ---------- Wochenplan ---------- */
+let view="list", weekOff=0;
+try{ if(localStorage.getItem("haushalt.view")==="week") view="week"; }catch(e){}
+const WD=["Mo","Di","Mi","Do","Fr","Sa","So"];
+function weekHtml(visible){
+  const ws=weekStart()+weekOff*7*DAY, we=ws+7*DAY, today=sod(Date.now());
+  const days=[...Array(7)].map((_,i)=>({t:ws+i*DAY,items:[]}));
+  const dayIdx=t=>Math.round((sod(t)-ws)/DAY);
+  const ids=new Set(visible.map(c=>c.id));
+  // Erledigt in dieser Woche (aus dem Verlauf)
+  Object.values(log).forEach(e=>{ if(!e||e.at<ws||e.at>=we||!ids.has(e.chore)) return; const c=chores.find(x=>x.id===e.chore); if(!c) return;
+    days[dayIdx(e.at)].items.push({c,done:true,by:e.by}); });
+  // Fällig bzw. geplant
+  visible.forEach(c=>{
+    const every=Math.max(1,c.every||7); let d=nextDue(c);
+    if(d<today){ if(today>=ws&&today<we) days[dayIdx(today)].items.push({c,late:true,days:Math.round((today-d)/DAY)}); d+=Math.ceil((today-d)/(every*DAY)||1)*every*DAY; }
+    if(weekOff<0 && d>=we) return;
+    while(d<ws) d+=every*DAY;
+    for(;d<we;d+=every*DAY){ if(d<today) continue; if(d===today && days[dayIdx(d)].items.some(x=>x.c.id===c.id&&x.late)) continue; days[dayIdx(d)].items.push({c,plan:true}); }
+  });
+  const label=weekOff===0?"Diese Woche":weekOff===1?"Nächste Woche":weekOff===-1?"Letzte Woche":`${new Date(ws).toLocaleDateString("de-DE",{day:"numeric",month:"numeric"})} – ${new Date(we-DAY).toLocaleDateString("de-DE",{day:"numeric",month:"numeric"})}`;
+  const open=days.reduce((n,d)=>n+d.items.filter(x=>!x.done).length,0), done=days.reduce((n,d)=>n+d.items.filter(x=>x.done).length,0);
+  const chip=(x)=>{ const w=whoList(x.c);
+    const who=x.done?`<span class="who" style="background:${colorOf(x.by)}" title="${esc(nameOf(x.by))}">${esc(initialOf(x.by))}</span>`:bubbles(w);
+    return `<li class="wk-item${x.done?" done":x.late?" late":""}" data-id="${esc(x.c.id)}">
+      ${x.done?`<span class="check done small">${CHECK}</span>`:`<button class="check small" type="button" data-act="done" aria-label="${esc(x.c.title)} erledigt">${CHECK}</button>`}
+      <button class="wk-main" type="button" data-act="goto"><b>${esc(x.c.title)}</b><small>${x.done?"erledigt von "+esc(nameOf(x.by)):x.late?`${x.days} ${x.days===1?"Tag":"Tage"} überfällig`:esc(x.c.room||"")}</small></button>${who}</li>`; };
+  return `<div class="wk-head"><button type="button" class="wk-nav" data-week="-1" aria-label="Vorherige Woche">‹</button>
+      <div><b>${label}</b><small>${open} offen · ${done} erledigt</small></div>
+      <button type="button" class="wk-nav" data-week="1" aria-label="Nächste Woche">›</button></div>
+    <div class="week">${days.map(d=>`<section class="wk-day${d.t===today?" today":""}${d.t<today?" past":""}">
+      <h4><span>${WD[dayIdx(d.t)]}</span>${new Date(d.t).getDate()}.${new Date(d.t).getMonth()+1}.</h4>
+      ${d.items.length?`<ul>${d.items.sort((a,b)=>(a.done-b.done)||(b.late?1:0)-(a.late?1:0)).map(chip).join("")}</ul>`:`<p class="wk-free">frei</p>`}</section>`).join("")}</div>`;
+}
+
 function bubbles(w){
   if(!w.length) return `<span class="who-all">Alle</span>`;
   return `<span class="whos">${w.slice(0,3).map(id=>`<span class="who" style="background:${colorOf(id)}" title="${esc(nameOf(id))}">${esc(initialOf(id))}</span>`).join("")}${w.length>3?`<span class="who more">+${w.length-3}</span>`:""}</span>`;
@@ -813,7 +901,7 @@ try{ const r=localStorage.getItem("haushalt.range"); if(["week","month","all"].i
 const rangeStart=()=>{ if(range==="week") return weekStart(); if(range==="month"){ const d=new Date(); return new Date(d.getFullYear(),d.getMonth(),1).getTime(); } return 0; };
 function tally(from){
   const t={}; memberList().forEach(m=>t[m.id]={pts:0,n:0});
-  Object.values(log).forEach(e=>{ if(e && e.at>=from && t[e.by]){ t[e.by].pts+=(e.pts||1); t[e.by].n++; } });
+  Object.values(log).forEach(e=>{ const b=e&&R(e.by); if(e && e.at>=from && t[b]){ t[b].pts+=(e.pts||1); t[b].n++; } });
   return t;
 }
 function renderBoard(){
@@ -865,7 +953,7 @@ function addChore(title,room,every,who){
 /* ---------- Abhaken ---------- */
 let toastTimer=null, toastUndo=null;
 function markDone(c){
-  if(!meValid()){ pendingDone=c.id; openMembers(true); return; }
+  if(!meValid()){ $("#status").textContent="Einen Moment, die Personen werden noch geladen."; return; }
   const w=whoList(c);
   // Aufgabe gehört jemand anderem: kurz nachfragen, wer es wirklich gemacht hat
   if(w.length && !w.includes(me)){ askWho(c,w); return; }
@@ -933,7 +1021,8 @@ function closeMembers(){
   const c=chores.find(x=>x.id===pendingDone); pendingDone=null;
   if(c && meValid()) markDone(c); else render();
 }
-$("#membersBtn").addEventListener("click",()=>openMembers(false));
+// Personen kommen aus den Konten, die dem Haushalt beigetreten sind; der Knopf öffnet das Einladen
+$("#membersBtn").addEventListener("click",()=>{ const b=document.querySelector('[data-pf="people"]'); if(b) b.click(); });
 $("#memDone").addEventListener("click",closeMembers);
 $("#membersModal").addEventListener("click",e=>{ if(e.target.id==="membersModal") closeMembers(); });
 $("#memAdd").addEventListener("click",()=>{
@@ -969,7 +1058,9 @@ document.addEventListener("click",e=>{
   const t=e.target;
   const sh=t.closest("[data-show]");
   if(sh){ show=sh.dataset.show; try{ localStorage.setItem("haushalt.show",show); }catch(err){}
-    if(show==="mine" && !meValid()) openMembers(true); render(); return; }
+    render(); return; }
+  const vw=t.closest("[data-view]"); if(vw){ view=vw.dataset.view; weekOff=0; try{ localStorage.setItem("haushalt.view",view); }catch(err){} openId=null; render(); return; }
+  const wk=t.closest("[data-week]"); if(wk){ weekOff+=+wk.dataset.week; render(); return; }
   const sg=t.closest("[data-suggest]"); if(sg){ const s=SUGGEST[+sg.dataset.suggest]; addChore(s[0],s[1],s[2],[]); return; }
   const rm=t.closest("[data-room]"); if(rm){ setField(rm.dataset.ctx,"room",rm.dataset.room); return; }
   const ar=t.closest("[data-addroom]"); if(ar){ addingRoom=ar.dataset.addroom; ar.dataset.addroom==="new"?renderNew():render(); setTimeout(()=>$("#roomIn")&&$("#roomIn").focus(),0); return; }
@@ -997,6 +1088,8 @@ document.addEventListener("click",e=>{
   const li=b.closest("li"); const c=li&&chores.find(x=>x.id===li.dataset.id); if(!c) return;
   const act=b.dataset.act;
   if(act==="open"){ openId=openId===c.id?null:c.id; confirmId=null; addingRoom=null; render(); }
+  if(act==="goto"){ view="list"; try{ localStorage.setItem("haushalt.view",view); }catch(err){} openId=c.id; confirmId=null; render();
+    setTimeout(()=>{ const el=document.querySelector(`#list li.open`); if(el) el.scrollIntoView({block:"center"}); },30); }
   if(act==="done") markDone(c);
   if(act==="undo") undo(c.id);
   if(act==="delete"){
@@ -1051,27 +1144,27 @@ document.addEventListener("focusout",e=>{
 setInterval(()=>{ const a=document.activeElement; if(!a||!a.matches("input,select")) render(); },60*1000);
 
 /* ---------- Start ---------- */
-Auth.start(firebaseConfig,"chores",r=>{
-root=r;
+Auth.start(firebaseConfig,"chores",(r,info)=>{
+root=r; if(info) me=info.uid;
 render();
 if(!root){
   $("#count").textContent="Keine Verbindung";
   $("#status").textContent="Die Datenbank konnte nicht geladen werden. Prüf die Internetverbindung und lade die Seite neu.";
 }else{
-  let peopleVal=null;
-  root.child("people").on("value",snap=>{
-    peopleVal=snap.val();
-    if(!membersLoaded) return;
-    ensureMembers(peopleVal);
-    // Namen vom Swipen übernehmen, falls hier noch keiner steht
-    for(const k of ["a","b"]) if(members[k] && !members[k].name && peopleVal && peopleVal[k]) root.child("members/"+k+"/name").set(peopleVal[k]);
-  });
-  root.child("members").on("value",snap=>{
-    const v=snap.val()||{}, typing=document.activeElement&&document.activeElement.dataset&&document.activeElement.dataset.mname;
-    members=v; if(typing && members[typing]) members[typing].name=document.activeElement.value;
-    if(!membersLoaded){ membersLoaded=true; ensureMembers(peopleVal); }
-    render(); if(!$("#membersModal").hidden) renderMembers();
-  });
+  let legacy={}, profiles={};
+  const buildMembers=()=>{
+    const ids=Object.keys(profiles).sort((a,b)=>(profiles[a].name||"").localeCompare(profiles[b].name||""));
+    const used=new Set(ids.map(id=>profiles[id].color).filter(Boolean));
+    members={};
+    ids.forEach((id,i)=>{ const pr=profiles[id]||{}; members[id]={name:pr.name||"",color:pr.color||COLORS.find(c=>!used.has(c)&&(used.add(c),true))||COLORS[i%COLORS.length],order:i}; });
+    // eigene Farbe einmal festlegen, damit sie auf allen Handys gleich ist
+    if(me && profiles[me] && !profiles[me].color) root.child("profiles/"+me+"/color").set(members[me].color).catch(()=>{});
+    legacyMap={};
+    Object.entries(legacy).forEach(([old,m])=>{ const n=(m&&m.name||"").trim().toLowerCase(); const hit=n&&ids.find(id=>(profiles[id].name||"").trim().toLowerCase()===n); if(hit) legacyMap[old]=hit; });
+    membersLoaded=true; render();
+  };
+  root.child("members").once("value").then(s=>{ legacy=s.val()||{}; buildMembers(); }).catch(()=>{});
+  root.child("profiles").on("value",snap=>{ profiles=snap.val()||{}; buildMembers(); });
   root.child("rooms").on("value",snap=>{ customRooms=snap.val()||{}; render(); });
   root.child("chores").on("value",snap=>{
     const v=snap.val()||{};
